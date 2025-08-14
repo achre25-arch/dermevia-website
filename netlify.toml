@@ -2,27 +2,15 @@
   functions = "netlify/functions"
   publish = "."
 
-[build.environment]
-  NODE_VERSION = "18"
-
 [functions]
   directory = "netlify/functions"
-  node_bundler = "esbuild"
+
+[build.environment]
+  NODE_VERSION = "18"
 
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, POST, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type, X-Requested-With"
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-
-[[redirects]]
-  from = "/admin/*"
-  to = "/404.html"
-  status = 404
+    Access-Control-Allow-Headers = "Content-Type"
