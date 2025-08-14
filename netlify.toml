@@ -2,12 +2,12 @@
   functions = "netlify/functions"
   publish = "."
 
+[build.environment]
+  NODE_VERSION = "18"
+
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-
-[build.environment]
-  NODE_VERSION = "18"
 
 [[headers]]
   for = "/.netlify/functions/*"
@@ -16,75 +16,13 @@
     Access-Control-Allow-Methods = "GET, POST, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type, X-Requested-With"
 
-# Main security headers (محسنة)
 [[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
-    X-XSS-Protection = "1; mode=block"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
-    # إزالة COEP المتضاربة
-    Cross-Origin-Opener-Policy = "same-origin"
 
-# CSS caching
-[[headers]]
-  for = "*.css"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-    Content-Type = "text/css; charset=utf-8"
-
-# JS caching  
-[[headers]]
-  for = "*.js"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-    Content-Type = "application/javascript; charset=utf-8"
-
-# Service Worker specific headers
-[[headers]]
-  for = "/sw.js"
-  [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
-    Content-Type = "application/javascript; charset=utf-8"
-
-# Functions CORS (محسنة)
-[[headers]]
-  for = "/.netlify/functions/*"
-  [headers.values]
-    Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
-    Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control"
-    Access-Control-Max-Age = "3600"
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-# Favicon
-[[headers]]
-  for = "/favicon.ico"
-  [headers.values]
-    Cache-Control = "public, max-age=86400"
-
-# Security redirects
 [[redirects]]
   from = "/admin/*"
   to = "/404.html"
   status = 404
-
-[[redirects]]
-  from = "/.env*"
-  to = "/404.html"  
-  status = 404
-
-# Clean URLs
-[[redirects]]
-  from = "/index.html"
-  to = "/"
-  status = 301
-
-# Functions config
-[functions]
-  node_bundler = "esbuild"
-  
-[functions.environment]
-  NODE_ENV = "production"
