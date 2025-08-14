@@ -3,6 +3,7 @@
   functions = "netlify/functions"
   command = "echo Building Dermevia"
 
+# Main security headers (relaxed for external resources)
 [[headers]]
   for = "/*"
   [headers.values]
@@ -10,34 +11,58 @@
     X-Content-Type-Options = "nosniff"
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    # Relaxed COEP to allow external images
+    Cross-Origin-Embedder-Policy = "unsafe-none"
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
 
+# CSS caching
 [[headers]]
   for = "*.css"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+    Content-Type = "text/css; charset=utf-8"
 
+# JS caching  
 [[headers]]
   for = "*.js"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+    Content-Type = "application/javascript; charset=utf-8"
 
+# Service Worker specific headers
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Content-Type = "application/javascript; charset=utf-8"
+
+# Functions CORS
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, POST, OPTIONS"
-    Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept"
+    Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    Access-Control-Max-Age = "3600"
 
+# Favicon
+[[headers]]
+  for = "/favicon.ico"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+# Security redirects
 [[redirects]]
   from = "/admin/*"
   to = "/404.html"
   status = 404
 
 [[redirects]]
-  from = "/.env"
-  to = "/404.html"
+  from = "/.env*"
+  to = "/404.html"  
   status = 404
 
+# Functions config
 [functions]
   node_bundler = "esbuild"
