@@ -1,3 +1,74 @@
+/* ===================================================================
+   الصور المحلية - Local Images Styles  
+   ================================================================ */
+
+/* صور المنتجات */
+.product-image img {
+  width: 100%;
+  max-width: 500px;
+  height: 400px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  transition: transform 0.3s ease;
+}
+
+.product-image img:hover {
+  transform: scale(1.05);
+}
+
+/* صور الشهادات */
+.testimonial-avatar img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #fff;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* معرض الصور */
+.gallery-image {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.gallery-image:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+/* الشعار */
+.logo img {
+  height: 45px;
+  width: auto;
+}
+
+/* Responsive للصور */
+@media (max-width: 768px) {
+  .product-image img {
+    height: 280px;
+  }
+  
+  .gallery-image {
+    height: 200px;
+  }
+}
+
+/* Lazy loading animation */
+img[loading="lazy"] {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+img[loading="lazy"].loaded {
+  opacity: 1;
+}
+
 /* =========== RESET & BASE STYLES =========== */
 * { 
   margin: 0; 
