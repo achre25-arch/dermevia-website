@@ -3,7 +3,6 @@
   functions = "netlify/functions"
   command = "echo Building Dermevia"
 
-# Security Headers
 [[headers]]
   for = "/*"
   [headers.values]
@@ -13,7 +12,6 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
 
-# Static Assets Caching
 [[headers]]
   for = "*.css"
   [headers.values]
@@ -24,7 +22,6 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# API Functions CORS
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
@@ -32,7 +29,6 @@
     Access-Control-Allow-Methods = "GET, POST, OPTIONS"
     Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept"
 
-# Security Redirects
 [[redirects]]
   from = "/admin/*"
   to = "/404.html"
@@ -43,6 +39,5 @@
   to = "/404.html"
   status = 404
 
-# Functions Configuration
 [functions]
   node_bundler = "esbuild"
