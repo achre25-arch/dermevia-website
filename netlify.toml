@@ -1,326 +1,68 @@
-# ===================================================================
-# DERMEVIA LABS - NETLIFY CONFIGURATION
-# Enhanced Security & Performance Setup
-# ===================================================================
-
 [build]
-  # مجلد النشر الأساسي
   publish = "."
-  
-  # مجلد الدوال
   functions = "netlify/functions"
-  
-  # أمر البناء (اختياري للمواقع الثابتة)
-  command = "echo 'Building Dermevia Site...'"
+  command = "echo 'Building Dermevia...'"
 
 [build.environment]
-  # إعدادات Node.js
   NODE_VERSION = "18"
-  NPM_VERSION = "9"
 
-# ===================================================================
-# SECURITY HEADERS - رؤوس الأمان الشاملة
-# ===================================================================
+# Static files headers
 [[headers]]
   for = "/*"
   [headers.values]
-    # Content Security Policy - محسنة للمشروع
-    Content-Security-Policy = '''
-      default-src 'self'; 
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' 
-        https://connect.facebook.net 
-        https://www.facebook.com 
-        https://api.ipify.org 
-        https://ipapi.co 
-        https://www.google.com 
-        https://www.gstatic.com
-        blob: data:; 
-      style-src 'self' 'unsafe-inline' 
-        https://fonts.googleapis.com 
-        https://fonts.gstatic.com; 
-      font-src 'self' 
-        https://fonts.gstatic.com 
-        https://fonts.googleapis.com 
-        data:; 
-      img-src 'self' 
-        https: 
-        data: 
-        blob: 
-        https://picsum.photos 
-        https://www.facebook.com; 
-      connect-src 'self' 
-        https: 
-        wss: 
-        blob: 
-        data: 
-        https://api.ipify.org 
-        https://ipapi.co 
-        https://connect.facebook.net 
-        https://www.facebook.com; 
-      media-src 'self' 
-        https: 
-        blob: 
-        data:; 
-      object-src 'none'; 
-      base-uri 'self'; 
-      form-action 'self'; 
-      frame-ancestors 'none'; 
-      upgrade-insecure-requests;
-    '''
-    
-    # Strict Transport Security
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     
-    # منع تحديد نوع المحتوى تلقائياً
-    X-Content-Type-Options = "nosniff"
-    
-    # منع عرض الموقع في إطارات خارجية
-    X-Frame-Options = "DENY"
-    
-    # تفعيل حماية XSS
-    X-XSS-Protection = "1; mode=block"
-    
-    # التحكم في المرجع
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    
-    # سياسة الأذونات
-    Permissions-Policy = '''
-      geolocation=(), 
-      microphone=(), 
-      camera=(), 
-      payment=(), 
-      usb=(), 
-      magnetometer=(), 
-      gyroscope=(), 
-      fullscreen=(self), 
-      display-capture=()
-    '''
-    
-    # إزالة معلومات الخادم
-    Server = ""
-    X-Powered-By = ""
-    
-    # Cache Control للأمان
-    Cache-Control = "no-cache, no-store, must-revalidate"
-    Pragma = "no-cache"
-    Expires = "0"
-
-# ===================================================================
-# STATIC ASSETS CACHING - تخزين مؤقت للملفات الثابتة
-# ===================================================================
+# CSS and JS caching
 [[headers]]
   for = "*.css"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
-    Content-Type = "text/css; charset=utf-8"
 
 [[headers]]
   for = "*.js"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
-    Content-Type = "application/javascript; charset=utf-8"
 
-[[headers]]
-  for = "*.png"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-    Content-Type = "image/png"
-
-[[headers]]
-  for = "*.jpg"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-    Content-Type = "image/jpeg"
-
-[[headers]]
-  for = "*.jpeg"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-    Content-Type = "image/jpeg"
-
-[[headers]]
-  for = "*.webp"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-    Content-Type = "image/webp"
-
-[[headers]]
-  for = "*.woff2"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-    Content-Type = "font/woff2"
-
-[[headers]]
-  for = "*.woff"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-    Content-Type = "font/woff"
-
-# ===================================================================
-# API ENDPOINTS SECURITY - أمان نقاط API
-# ===================================================================
+# API endpoints
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
-    # CORS للدوال
     Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
-    Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control"
-    Access-Control-Max-Age = "86400"
-    
-    # أمان إضافي للدوال
-    X-Content-Type-Options = "nosniff"
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    
-    # منع التخزين المؤقت لاستجابات API
-    Cache-Control = "no-cache, no-store, must-revalidate, private"
-    Pragma = "no-cache"
-    Expires = "0"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept"
 
-# ===================================================================
-# SENSITIVE FILES PROTECTION - حماية الملفات الحساسة
-# ===================================================================
-[[headers]]
-  for = "/.env"
-  [headers.values]
-    X-Robots-Tag = "noindex, nofollow"
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/.env.*"
-  [headers.values]
-    X-Robots-Tag = "noindex, nofollow"
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/package.json"
-  [headers.values]
-    X-Robots-Tag = "noindex, nofollow"
-
-[[headers]]
-  for = "/netlify.toml"
-  [headers.values]
-    X-Robots-Tag = "noindex, nofollow"
-
-# ===================================================================
-# SEO OPTIMIZATION - تحسين محركات البحث
-# ===================================================================
-[[headers]]
-  for = "/robots.txt"
-  [headers.values]
-    Content-Type = "text/plain; charset=utf-8"
-    Cache-Control = "public, max-age=3600"
-
-[[headers]]
-  for = "/sitemap.xml"
-  [headers.values]
-    Content-Type = "application/xml; charset=utf-8"
-    Cache-Control = "public, max-age=3600"
-
-# ===================================================================
-# REDIRECTS & REWRITES - إعادة التوجيه
-# ===================================================================
+# Block sensitive paths
 [[redirects]]
   from = "/admin/*"
-  to = "/error.html"
-  status = 404
-
-[[redirects]]
-  from = "/wp-admin/*"
-  to = "/error.html"  
+  to = "/404.html"
   status = 404
 
 [[redirects]]
   from = "/.env"
-  to = "/error.html"
+  to = "/404.html"
   status = 404
 
 [[redirects]]
   from = "/config/*"
-  to = "/error.html"
+  to = "/404.html"
   status = 404
 
-# Redirect HTTP to HTTPS
-[[redirects]]
-  from = "http://zenabiodz.com/*"
-  to = "https://zenabiodz.com/:splat"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "http://www.zenabiodz.com/*"
-  to = "https://zenabiodz.com/:splat"
-  status = 301
-  force = true
-
-# Remove www
+# Main redirects
 [[redirects]]
   from = "https://www.zenabiodz.com/*"
   to = "https://zenabiodz.com/:splat"
   status = 301
   force = true
 
-# ===================================================================
-# EDGE FUNCTIONS (اختياري)
-# ===================================================================
-[[edge_functions]]
-  function = "security-headers"
-  path = "/*"
+[[redirects]]
+  from = "/index.html"
+  to = "/"
+  status = 301
 
-# ===================================================================
-# FUNCTIONS CONFIGURATION
-# ===================================================================
+# Functions settings
 [functions]
-  # إعدادات الدوال العامة
   node_bundler = "esbuild"
-  
-  # مهلة التنفيذ (26 ثانية هو الحد الأقصى)
-  timeout = 26
-  
-  # حجم الذاكرة
-  memory = 1024
-
-# دالة معالجة النماذج
-[functions."submit-form"]
-  timeout = 15
-
-# دالة فحص Rate Limiting  
-[functions."validate-rate-limit"]
-  timeout = 10
-
-# ===================================================================
-# BUILD PLUGINS - إضافات البناء
-# ===================================================================
-[[plugins]]
-  package = "@netlify/plugin-sitemap"
-  [plugins.inputs]
-    buildDir = "."
-    exclude = [
-      "/admin/**",
-      "/error.html",
-      "/.netlify/**"
-    ]
-
-# ===================================================================
-# ENVIRONMENT VARIABLES (للمرجع)
-# ===================================================================
-# يجب إضافة هذه المتغيرات في لوحة تحكم Netlify:
-# - TELEGRAM_BOT_TOKEN
-# - TELEGRAM_CHAT_ID  
-# - ENCRYPTION_KEY
-# - RATE_LIMIT_SECRET
-# - ALLOWED_ORIGINS
-
-# ===================================================================
-# DEVELOPMENT SETTINGS
-# ===================================================================
-[dev]
-  command = "echo 'Local development server starting...'"
-  port = 8888
-  publish = "."
-  functions = "netlify/functions"
-  
-  # متغيرات التطوير المحلي
-  [dev.env]
-    NETLIFY_DEV = "true"
