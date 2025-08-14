@@ -1,19 +1,12 @@
 [build]
-  functions = "netlify/functions"
+  functions = "functions"   # يشير إلى المجلد /functions
   publish = "."
 
 [functions]
-  directory = "netlify/functions"
+  node_bundler = "esbuild"
 
 [build.environment]
   NODE_VERSION = "18"
-
-[[headers]]
-  for = "/.netlify/functions/*"
-  [headers.values]
-    Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type"
 
 [[redirects]]
   from = "/api/*"
