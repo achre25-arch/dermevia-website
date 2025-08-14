@@ -1707,3 +1707,14 @@ img[src*="picsum.photos"]:before {
   font-size: 14px;
   font-weight: 600;
 }
+
+/* Override problematic font to fix ERR_NAME_NOT_RESOLVED */
+@font-face {
+    font-family: 'Dermevia Pureskin'; /* Name of the problematic font */
+    src: local('Arial'), local('Helvetica'); /* Fallback to a local font */
+    font-display: swap;
+}
+
+body, h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, select, textarea {
+    font-family: 'Tajawal', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
