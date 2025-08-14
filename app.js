@@ -332,7 +332,7 @@ function validateNameAdvanced(name) {
   return !suspiciousPatterns.some(pattern => pattern.test(name));
 }
 
-// =========== ENHANCED IP FETCHING ===========
+// في app.js - استبدل دالة fetchIPSecure بهذه:
 async function fetchIPSecure() {
   try {
     const isLocal = window.location.hostname === 'localhost' || 
@@ -349,13 +349,13 @@ async function fetchIPSecure() {
     const timeoutId = setTimeout(() => controller.abort(), 8000);
     
     try {
-     const response = await fetch('https://api.ipify.org?format=json', {
-  signal: controller.signal,
-  mode: 'cors',
-  headers: {
-    'Accept': 'application/json'
-  }
-});
+      const response = await fetch('https://api.ipify.org?format=json', {
+        signal: controller.signal,
+        mode: 'cors',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
       
       clearTimeout(timeoutId);
       
@@ -369,12 +369,17 @@ async function fetchIPSecure() {
     } catch (error) {
       clearTimeout(timeoutId);
       
-      // Fallback to alternative service
+      // Fallback بدون AbortSignal.timeout
       try {
+        const fallbackController = new AbortController();
+        const fallbackTimeoutId = setTimeout(() => fallbackController.abort(), 5000);
+        
         const fallbackResponse = await fetch('https://ipapi.co/json/', {
-          signal: AbortSignal.timeout(5000),
+          signal: fallbackController.signal, // ✅ إصلاح
           headers: { 'Accept': 'application/json' }
         });
+        
+        clearTimeout(fallbackTimeoutId);
         
         if (fallbackResponse.ok) {
           const fallbackData = await fallbackResponse.json();
@@ -394,7 +399,6 @@ async function fetchIPSecure() {
     clientIP = 'error_' + Date.now().toString(36);
   }
 }
-
 // =========== SERVER-SIDE RATE LIMITING ===========
 async function checkServerRateLimit(phone) {
   try {
@@ -1954,18 +1958,35 @@ document.addEventListener('DOMContentLoaded', async function() {
   console.log('⚡ Rate limiting: Server-side + local fallback');
 });
 
-// Service Worker - Disabled temporarily
-/*
+// استبدل التعليق بهذا الكود في نهاية app.js:
 if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(registration => console.log('✅ Service Worker registered'))
-      .catch(error => console.log('❌ Service Worker registration failed:', error));
+      .then(registration => {
+        console.log('✅ Service Worker registered');
+        
+        // تنظيف دوري للتخزين المؤقت
+        registration.addEventListener('updatefound', () => {
+          console.log('🔄 Service Worker update available');
+        });
+        
+        // رسالة تنظيف كل 24 ساعة
+        setInterval(() => {
+          if (registration.active) {
+            registration.active.postMessage({
+              type: 'CLEANUP_CACHE'
+            });
+          }
+        }, 24 * 60 * 60 * 1000);
+      })
+      .catch(error => {
+        console.log('❌ Service Worker registration failed:', error);
+        // لا تفعل شيء - الموقع سيعمل بدون Service Worker
+      });
   });
 } else {
   console.log('📁 Running locally or no HTTPS - Service Worker disabled');
 }
-*/
 
 // =========== UTILITY FUNCTIONS ===========
 function debounce(func, wait) {

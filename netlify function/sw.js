@@ -445,7 +445,24 @@ async function cleanupCaches() {
   }
 }
 
-// Run cleanup periodically
-setInterval(cleanupCaches, 24 * 60 * 60 * 1000); // Once per day
+// استبدل setInterval بهذا الكود الأكثر كفاءة:
+let cleanupScheduled = false;
+
+function scheduleCleanup() {
+  if (cleanupScheduled) return;
+  
+  cleanupScheduled = true;
+  
+  // تنظيف عند تحديث Service Worker
+  self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'CLEANUP_CACHE') {
+      cleanupCaches();
+    }
+  });
+}
+
+scheduleCleanup();
+
+console.log('📱 Dermevia Service Worker loaded - Version 3.0.0');
 
 console.log('📱 Dermevia Service Worker loaded - Version 3.0.0');
