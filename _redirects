@@ -1,9 +1,9 @@
-# Functions
-/.netlify/functions/* /.netlify/functions/:splat 200
+# Main page
+/* /index.html 200
 
 # Static files
 /*.css /styles.css 200
 /*.js /app.js 200
 
-# Main page
-/* /index.html 200
+# Fallback for API
+/api/* /.netlify/functions/:splat 200
