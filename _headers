@@ -30,7 +30,7 @@
   
   # إزالة معلومات الخادم
   Server: 
-  X-Powered-By: 
+  X-Powered-By
   
   # منع التخزين المؤقت للصفحات الديناميكية
   Cache-Control: no-cache, no-store, must-revalidate
