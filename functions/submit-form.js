@@ -57,7 +57,15 @@ function validatePhone(phone) {
 
 function isValidOrigin(origin) {
   if (!origin) return false;
-  return CONFIG.ALLOWED_ORIGINS.includes(origin);
+  if (CONFIG.ALLOWED_ORIGINS.includes(origin)) return true;
+  try {
+    const u = new URL(origin);
+    return u.protocol === 'https:' && (
+      u.hostname.endsWith('.netlify.app') ||
+      u.hostname === 'zenabiodz.com' ||
+      u.hostname === 'www.zenabiodz.com'
+    );
+  } catch { return false; }
 }
 
 function getClientIP(event) {
