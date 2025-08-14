@@ -3,7 +3,6 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
 
-# Static files
 /*.css
   Content-Type: text/css
   Cache-Control: public, max-age=3600
@@ -20,7 +19,6 @@
   Content-Type: image/jpeg
   Cache-Control: public, max-age=3600
 
-# API functions
 /.netlify/functions/*
   Access-Control-Allow-Origin: *
   Access-Control-Allow-Methods: GET, POST, OPTIONS
