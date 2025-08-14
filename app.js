@@ -349,13 +349,13 @@ async function fetchIPSecure() {
     const timeoutId = setTimeout(() => controller.abort(), 8000);
     
     try {
-      const response = await fetch('https://api.ipify.org?format=json', {
-        signal: controller.signal,
-        headers: {
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache'
-        }
-      });
+     const response = await fetch('https://api.ipify.org?format=json', {
+  signal: controller.signal,
+  mode: 'cors',
+  headers: {
+    'Accept': 'application/json'
+  }
+});
       
       clearTimeout(timeoutId);
       
@@ -864,11 +864,11 @@ function stopAutoSlide() {
 // =========== MODAL GALLERY (نفس المحتوى) ===========
 function openModal(imageSrc) {
   currentModalImages = [
-    'https://picsum.photos/800/600?random=10',
-    'https://picsum.photos/800/600?random=11',
-    'https://picsum.photos/800/600?random=12',
-    'https://picsum.photos/800/600?random=13'
-  ];
+   'https://via.placeholder.com/800x600/009fe3/ffffff?text=Dermevia+1',
+  'https://via.placeholder.com/800x600/10b981/ffffff?text=Dermevia+2', 
+  'https://via.placeholder.com/800x600/6366f1/ffffff?text=Dermevia+3',
+  'https://via.placeholder.com/800x600/f59e0b/ffffff?text=Dermevia+4'
+];
   
   currentModalIndex = currentModalImages.indexOf(imageSrc);
   if (currentModalIndex === -1) currentModalIndex = 0;
@@ -1954,7 +1954,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   console.log('⚡ Rate limiting: Server-side + local fallback');
 });
 
-// Service Worker
+// Service Worker - Disabled temporarily
+/*
 if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
@@ -1964,6 +1965,7 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
 } else {
   console.log('📁 Running locally or no HTTPS - Service Worker disabled');
 }
+*/
 
 // =========== UTILITY FUNCTIONS ===========
 function debounce(func, wait) {
