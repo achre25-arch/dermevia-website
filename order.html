@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>شكراً لطلبك - Dermevia</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <meta name="facebook-domain-verification" content="a1scuwbd8p25cgxhptyyr7m3wkxvhu" />
+  <script>
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+  n.push=n; n.loaded=!0; n.version='2.0'; n.queue=[]; t=b.createElement(e); t.async=!0;
+  t.src=v; s=b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init','1932630870825121'); fbq('track','PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=1932630870825121&ev=PageView&noscript=1"/></noscript>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Tajawal',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#fdfbf7 0%,#f8f4ed 100%);min-height:100vh;color:#333}
+    body.ltr{direction:ltr;text-align:left}
+    .wrap{max-width:900px;margin:30px auto;padding:0 20px}
+    .card{background:#fff;border:1px solid #eee;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.06);padding:24px}
+    .title{font-size:1.8rem;font-weight:800;margin-bottom:8px;color:#1f2937;text-align:center}
+    .subtitle{text-align:center;color:#4b5563;margin-bottom:18px}
+    .summary{margin-top:10px}
+    .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f1f1}
+    .row:last-child{border-bottom:none}
+    .ok{margin:16px 0;padding:12px;border-radius:12px;background:#e6fffa;border:1px solid #b2f5ea;color:#065f46;font-weight:700;text-align:center}
+    .rate-limit-info{margin:16px 0;padding:12px;border-radius:12px;background:#fff3cd;border:1px solid #ffeeba;color:#856404;font-weight:700;text-align:center}
+    .note{text-align:center;color:#6b7280;margin-top:14px}
+  </style>
+</head>
+<body id="body" class="rtl">
+  <script>document.addEventListener('contextmenu', e => e.preventDefault());</script>
+  <div class="wrap">
+    <div class="card">
+      <h1 class="title" id="title">🎉 شكراً لطلبك!</h1>
+      <p class="subtitle" id="subtitle">تم استلام طلبك وسنتصل بك لتأكيد الطلب قبل الشحن.</p>
+      <div class="ok" id="okBox">✅ تم تسجيل الطلب بنجاح</div>
+      <div class="rate-limit-info" id="rateLimitInfo" style="display:none">
+        ⚠️ لمنع الازدحام، لا يمكنك تقديم طلب آخر بنفس الهاتف لمدة 24 ساعة
+      </div>
+      <div class="summary" id="summary"></div>
+      <p class="note" id="note">ملاحظة: سنقوم بالتواصل معك هاتفياً لتأكيد جميع التفاصيل.</p>
+    </div>
+  </div>
+  <script>
+    const I18N = {
+      ar: { 
+        title:"🎉 شكراً لطلبك!", 
+        subtitle:"تم استلام طلبك وسنتصل بك لتأكيد الطلب قبل الشحن.", 
+        ok:"✅ تم تسجيل الطلب بنجاح",
+        rateLimitInfo:"⚠️ لمنع الازدحام، لا يمكنك تقديم طلب آخر بنفس الهاتف لمدة 24 ساعة",
+        note:"ملاحظة: سنقوم بالتواصل معك هاتفياً لتأكيد جميع التفاصيل.",
+        labels:{ 
+          name:"👤 الاسم", 
+          phone:"📱 الهاتف", 
+          product:"🛍️ المنتج", 
+          wilaya:"📍 الولاية", 
+          commune:"🏘️ البلدية", 
+          delivery:"🚚 نوع التوصيل", 
+          product_price:"💳 سعر المنتج", 
+          delivery_price:"🚚 سعر التوصيل", 
+          total_price:"💰 الإجمالي" 
+        },
+        deliveryHome:"توصيل للمنزل", 
+        deliveryOffice:"توصيل للمكتب", 
+        currency:"دج"
+      },
+      fr: { 
+        title:"🎉 Merci pour votre commande !", 
+        subtitle:"Votre commande a été reçue. Nous vous contacterons pour confirmer avant l'expédition.", 
+        ok:"✅ Commande enregistrée avec succès",
+        rateLimitInfo:"⚠️ Pour éviter la surcharge, vous ne pouvez pas passer une autre commande avec le même téléphone pendant 24 heures",
+        note:"Remarque : Nous vous contacterons par téléphone pour confirmer tous les détails.",
+        labels:{ 
+          name:"👤 Nom", 
+          phone:"📱 Téléphone", 
+          product:"🛍️ Produit", 
+          wilaya:"📍 Wilaya", 
+          commune:"🏘️ Commune", 
+          delivery:"🚚 Type de livraison", 
+          product_price:"💳 Prix produit", 
+          delivery_price:"🚚 Frais de livraison", 
+          total_price:"💰 Total" 
+        },
+        deliveryHome:"Livraison à domicile", 
+        deliveryOffice:"Livraison au bureau", 
+		        currency:"DA"
+      }
+    };
+    
+    function getLang(){ 
+      try { 
+        const last=JSON.parse(localStorage.getItem('dermevia_last_order')||'null'); 
+        if(last && (last.lang==='ar'||last.lang==='fr')) return last.lang; 
+      } catch(e){} 
+      return localStorage.getItem('dermevia_lang')||'ar'; 
+    }
+    
+    function setDirByLang(lang){ 
+      document.documentElement.lang=lang; 
+      document.documentElement.dir=(lang==='ar')?'rtl':'ltr'; 
+      document.getElementById('body').className=(lang==='ar')?'rtl':'ltr'; 
+    }
+    
+    function fmt(v, lang){ 
+      return `${v} ${I18N[lang].currency}`; 
+    }
+    
+    function render(){
+      const lang = getLang();
+      const L = I18N[lang];
+      setDirByLang(lang);
+      document.getElementById('title').textContent = L.title;
+      document.getElementById('subtitle').textContent = L.subtitle;
+      document.getElementById('okBox').textContent = L.ok;
+      document.getElementById('rateLimitInfo').textContent = L.rateLimitInfo;
+      document.getElementById('note').textContent = L.note;
+      
+      const lastOrder = JSON.parse(localStorage.getItem('dermevia_last_order') || 'null');
+      
+      if (lastOrder && lastOrder.phone) {
+        document.getElementById('rateLimitInfo').style.display = 'block';
+      }
+      
+      const s = document.getElementById('summary');
+      if (!lastOrder) { s.innerHTML = ''; return; }
+      
+      const deliveryText = (lastOrder.delivery_type === 'home') ? L.deliveryHome : L.deliveryOffice;
+      s.innerHTML = `
+        <div class="row"><span>${L.labels.name}</span><strong>${lastOrder.name||''}</strong></div>
+        <div class="row"><span>${L.labels.phone}</span><strong>${lastOrder.phone||''}</strong></div>
+        <div class="row"><span>${L.labels.product}</span><strong>${lastOrder.product||''}</strong></div>
+        <div class="row"><span>${L.labels.wilaya}</span><strong>${lastOrder.wilaya||''}</strong></div>
+        <div class="row"><span>${L.labels.commune}</span><strong>${lastOrder.commune||''}</strong></div>
+        <div class="row"><span>${L.labels.delivery}</span><strong>${deliveryText}</strong></div>
+        <div class="row"><span>${L.labels.product_price}</span><strong>${fmt(lastOrder.product_price||0,lang)}</strong></div>
+        <div class="row"><span>${L.labels.delivery_price}</span><strong>${fmt(lastOrder.delivery_price||0,lang)}</strong></div>
+        <div class="row"><span>${L.labels.total_price}</span><strong>${fmt(lastOrder.total_price||0,lang)}</strong></div>
+      `;
+      
+      try {
+        if (typeof fbq === 'function') fbq('track','Purchase',{ value: Number(lastOrder.total_price||0), currency: 'DZD', content_name: lastOrder.product });
+      } catch(e){}
+    }
+    
+    window.addEventListener('load', render);
+  </script>
+</body>
+</html>

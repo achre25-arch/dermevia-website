@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  
+  <!-- ===================================================================
+       DERMEVIA LABS - SEO OPTIMIZED SITEMAP
+       ================================================================ -->
+
+  <!-- Main Page - Homepage -->
+  <url>
+    <loc>https://zenabiodz.com/</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <!-- Arabic version -->
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/" />
+    <!-- French version -->
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/?lang=fr" />
+    <!-- Default language -->
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://zenabiodz.com/" />
+  </url>
+
+  <!-- Order Confirmation Page -->
+  <url>
+    <loc>https://zenabiodz.com/order</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/order" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/order?lang=fr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://zenabiodz.com/order" />
+  </url>
+
+  <!-- Product Page (if separate) -->
+  <url>
+    <loc>https://zenabiodz.com/dermevia-pureskin</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/dermevia-pureskin" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/dermevia-pureskin?lang=fr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://zenabiodz.com/dermevia-pureskin" />
+  </url>
+
+  <!-- Landing Pages for different regions -->
+  <url>
+    <loc>https://zenabiodz.com/alger</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/alger" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/alger?lang=fr" />
+  </url>
+
+  <url>
+    <loc>https://zenabiodz.com/oran</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/oran" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/oran?lang=fr" />
+  </url>
+
+  <url>
+    <loc>https://zenabiodz.com/constantine</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/constantine" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/constantine?lang=fr" />
+  </url>
+
+  <!-- About/Contact Pages -->
+  <url>
+    <loc>https://zenabiodz.com/about</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/about" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/about?lang=fr" />
+  </url>
+
+  <url>
+    <loc>https://zenabiodz.com/contact</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/contact" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/contact?lang=fr" />
+  </url>
+
+  <!-- Legal Pages -->
+  <url>
+    <loc>https://zenabiodz.com/privacy</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/privacy" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/privacy?lang=fr" />
+  </url>
+
+  <url>
+    <loc>https://zenabiodz.com/terms</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/terms" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/terms?lang=fr" />
+  </url>
+
+  <!-- FAQ Page -->
+  <url>
+    <loc>https://zenabiodz.com/faq</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/faq" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/faq?lang=fr" />
+  </url>
+
+  <!-- Testimonials/Reviews Page -->
+  <url>
+    <loc>https://zenabiodz.com/testimonials</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/testimonials" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/testimonials?lang=fr" />
+  </url>
+
+  <!-- Before/After Gallery -->
+  <url>
+    <loc>https://zenabiodz.com/results</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/results" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/results?lang=fr" />
+  </url>
+
+  <!-- Skin Care Tips Blog -->
+  <url>
+    <loc>https://zenabiodz.com/skincare-tips</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/skincare-tips" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/skincare-tips?lang=fr" />
+  </url>
+
+  <!-- Ingredients Information -->
+  <url>
+    <loc>https://zenabiodz.com/ingredients</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/ingredients" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/ingredients?lang=fr" />
+  </url>
+
+  <!-- How to Use Guide -->
+  <url>
+    <loc>https://zenabiodz.com/how-to-use</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/how-to-use" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/how-to-use?lang=fr" />
+  </url>
+
+  <!-- Scientific Studies -->
+  <url>
+    <loc>https://zenabiodz.com/studies</loc>
+    <lastmod>2024-08-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://zenabiodz.com/studies" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://zenabiodz.com/studies?lang=fr" />
+  </url>
+
+</urlset>

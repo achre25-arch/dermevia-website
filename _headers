@@ -1,0 +1,301 @@
+# ===================================================================
+# DERMEVIA LABS - SECURITY HEADERS CONFIGURATION
+# Advanced Protection Against Web Attacks
+# ===================================================================
+
+# ===================================================================
+# GLOBAL SECURITY HEADERS - رؤوس الأمان العامة
+# ===================================================================
+/*
+  # Content Security Policy - سياسة أمان المحتوى المحسنة
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://www.facebook.com https://api.ipify.org https://ipapi.co https://www.google.com https://www.gstatic.com blob: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com data:; img-src 'self' https: data: blob: https://picsum.photos https://www.facebook.com; connect-src 'self' https: wss: blob: data: https://api.ipify.org https://ipapi.co https://connect.facebook.net https://www.facebook.com; media-src 'self' https: blob: data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;
+  
+  # Strict Transport Security - إجبار HTTPS
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  
+  # منع تحديد نوع المحتوى تلقائياً
+  X-Content-Type-Options: nosniff
+  
+  # منع عرض الموقع في إطارات خارجية
+  X-Frame-Options: DENY
+  
+  # تفعيل حماية XSS المدمجة في المتصفح
+  X-XSS-Protection: 1; mode=block
+  
+  # التحكم في المرجع المرسل
+  Referrer-Policy: strict-origin-when-cross-origin
+  
+  # سياسة الأذونات للميزات الحساسة
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), fullscreen=(self), display-capture=()
+  
+  # إزالة معلومات الخادم
+  Server: 
+  X-Powered-By: 
+  
+  # منع التخزين المؤقت للصفحات الديناميكية
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+  
+  # حماية إضافية
+  X-DNS-Prefetch-Control: off
+  X-Download-Options: noopen
+  X-Permitted-Cross-Domain-Policies: none
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+
+# ===================================================================
+# STATIC ASSETS - الملفات الثابتة
+# ===================================================================
+
+# CSS Files
+/*.css
+  Content-Type: text/css; charset=utf-8
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+
+# JavaScript Files  
+/*.js
+  Content-Type: application/javascript; charset=utf-8
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+
+# Images
+/*.png
+  Content-Type: image/png
+  Cache-Control: public, max-age=31536000, immutable
+  
+/*.jpg
+  Content-Type: image/jpeg
+  Cache-Control: public, max-age=31536000, immutable
+  
+/*.jpeg
+  Content-Type: image/jpeg
+  Cache-Control: public, max-age=31536000, immutable
+  
+/*.gif
+  Content-Type: image/gif
+  Cache-Control: public, max-age=31536000, immutable
+  
+/*.webp
+  Content-Type: image/webp
+  Cache-Control: public, max-age=31536000, immutable
+  
+/*.svg
+  Content-Type: image/svg+xml
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+
+# Fonts
+/*.woff
+  Content-Type: font/woff
+  Cache-Control: public, max-age=31536000, immutable
+  Access-Control-Allow-Origin: *
+  
+/*.woff2
+  Content-Type: font/woff2
+  Cache-Control: public, max-age=31536000, immutable
+  Access-Control-Allow-Origin: *
+  
+/*.ttf
+  Content-Type: font/ttf
+  Cache-Control: public, max-age=31536000, immutable
+  Access-Control-Allow-Origin: *
+  
+/*.eot
+  Content-Type: font/eot
+  Cache-Control: public, max-age=31536000, immutable
+  Access-Control-Allow-Origin: *
+
+# ===================================================================
+# API ENDPOINTS - نقاط API
+# ===================================================================
+/.netlify/functions/*
+  # CORS Headers
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+  Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, X-Forwarded-For, User-Agent
+  Access-Control-Max-Age: 86400
+  Access-Control-Allow-Credentials: false
+  
+  # Security Headers for APIs
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: no-referrer
+  
+  # Prevent API caching
+  Cache-Control: no-cache, no-store, must-revalidate, private
+  Pragma: no-cache
+  Expires: 0
+  
+  # Rate limiting headers (سيتم تعيينها بواسطة الدوال)
+  X-RateLimit-Limit: 100
+  X-RateLimit-Window: 3600
+
+# ===================================================================
+# SENSITIVE FILES - الملفات الحساسة
+# ===================================================================
+/.env
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache, no-store, must-revalidate
+  
+/.env.*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache, no-store, must-revalidate
+  
+/package.json
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache, no-store, must-revalidate
+  
+/package-lock.json
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache, no-store, must-revalidate
+  
+/netlify.toml
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache, no-store, must-revalidate
+  
+/.htaccess
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# ===================================================================
+# SEO & CRAWLERS - محركات البحث
+# ===================================================================
+/robots.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=3600
+  
+/sitemap.xml
+  Content-Type: application/xml; charset=utf-8
+  Cache-Control: public, max-age=3600
+  
+/sitemap*.xml
+  Content-Type: application/xml; charset=utf-8
+  Cache-Control: public, max-age=3600
+
+# Favicon and Icons
+/favicon.ico
+  Content-Type: image/x-icon
+  Cache-Control: public, max-age=2592000
+  
+/favicon.png
+  Content-Type: image/png
+  Cache-Control: public, max-age=2592000
+  
+/apple-touch-icon*.png
+  Content-Type: image/png
+  Cache-Control: public, max-age=2592000
+  
+/android-chrome*.png
+  Content-Type: image/png
+  Cache-Control: public, max-age=2592000
+
+# ===================================================================
+# SPECIAL PAGES - صفحات خاصة
+# ===================================================================
+/order.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  X-Robots-Tag: noindex, nofollow
+  
+/error.html
+  Cache-Control: public, max-age=300
+  X-Robots-Tag: noindex, nofollow
+
+# ===================================================================
+# MANIFEST FILES - ملفات البيان
+# ===================================================================
+/manifest.json
+  Content-Type: application/manifest+json
+  Cache-Control: public, max-age=3600
+  
+/site.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: public, max-age=3600
+  
+/browserconfig.xml
+  Content-Type: application/xml
+  Cache-Control: public, max-age=3600
+
+# ===================================================================
+# SECURITY TESTING - اختبار الأمان
+# ===================================================================
+/.well-known/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=0
+  
+/security.txt
+  Content-Type: text/plain
+  Cache-Control: public, max-age=86400
+
+# ===================================================================
+# DEVELOPMENT FILES - ملفات التطوير
+# ===================================================================
+/README.md
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+  
+/LICENSE
+  Content-Type: text/plain
+  Cache-Control: public, max-age=86400
+
+# ===================================================================
+# BLOCKED PATHS - المسارات المحجوبة
+# ===================================================================
+/admin/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache, no-store, must-revalidate
+  
+/wp-admin/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache, no-store, must-revalidate
+  
+/config/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache, no-store, must-revalidate
+  
+/database/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache, no-store, must-revalidate
+  
+/backup/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# ===================================================================
+# PERFORMANCE HEADERS - رؤوس الأداء
+# ===================================================================
+/*
+  # DNS Prefetching
+  X-DNS-Prefetch-Control: on
+  
+  # Connection Keep-Alive
+  Connection: keep-alive
+  
+  # Resource Hints
+  Link: <https://fonts.googleapis.com>; rel=preconnect; crossorigin, <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+  
+  # Early Hints for Critical Resources
+  # Link: </styles.css>; rel=preload; as=style
+  # Link: </app.js>; rel=preload; as=script
+
+# ===================================================================
+# MOBILE OPTIMIZATION - تحسين الهاتف المحمول
+# ===================================================================
+/*
+  # Viewport Meta (يتم التحكم فيه في HTML)
+  # X-UA-Compatible: IE=edge (للتوافق مع IE القديم)
+  
+# ===================================================================
+# ANALYTICS & TRACKING - التتبع والتحليلات
+# ===================================================================
+# السماح لـ Facebook Pixel و Google Analytics
+/*.js
+  # إذا كان الملف يحتوي على كود التتبع
+  Content-Security-Policy: script-src 'self' 'unsafe-inline' https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com
+
+# ===================================================================
+# END OF SECURITY HEADERS CONFIGURATION
+# ===================================================================

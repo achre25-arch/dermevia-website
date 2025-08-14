@@ -1,0 +1,589 @@
+# ===================================================================
+# DERMEVIA LABS - ENHANCED ROBOTS.TXT v2.0
+# Advanced SEO & Security Configuration
+# Last Updated: August 2024
+# Domain: zenabiodz.com
+# ===================================================================
+
+# ====================
+# SEARCH ENGINE DIRECTIVES
+# ====================
+
+# Default rules for all crawlers
+User-agent: *
+Allow: /
+
+# Crawl delay (1 second for better server performance)
+Crawl-delay: 1
+
+# ====================
+# SECURITY & PRIVACY PROTECTION
+# ====================
+
+# Block access to sensitive directories
+Disallow: /admin/
+Disallow: /api/
+Disallow: /backend/
+Disallow: /config/
+Disallow: /database/
+Disallow: /db/
+Disallow: /logs/
+Disallow: /log/
+Disallow: /tmp/
+Disallow: /temp/
+Disallow: /cache/
+Disallow: /backup/
+Disallow: /backups/
+Disallow: /includes/
+Disallow: /inc/
+Disallow: /lib/
+Disallow: /libraries/
+Disallow: /vendor/
+Disallow: /node_modules/
+Disallow: /src/
+Disallow: /assets/private/
+Disallow: /private/
+Disallow: /internal/
+Disallow: /system/
+Disallow: /wp-admin/
+Disallow: /wp-includes/
+Disallow: /wp-content/uploads/private/
+Disallow: /cgi-bin/
+Disallow: /scripts/
+Disallow: /test/
+Disallow: /tests/
+Disallow: /testing/
+Disallow: /dev/
+Disallow: /development/
+Disallow: /staging/
+
+# Block sensitive file types
+Disallow: /*.sql$
+Disallow: /*.log$
+Disallow: /*.bak$
+Disallow: /*.backup$
+Disallow: /*.old$
+Disallow: /*.orig$
+Disallow: /*.tmp$
+Disallow: /*.temp$
+Disallow: /*.conf$
+Disallow: /*.config$
+Disallow: /*.ini$
+Disallow: /*.env$
+Disallow: /*.json$
+Disallow: /*.xml$
+Disallow: /*.yml$
+Disallow: /*.yaml$
+Disallow: /*.md$
+Disallow: /*.txt$
+Disallow: /*.csv$
+Disallow: /*~$
+
+# Block URL parameters that don't add value
+Disallow: /*?*utm_*
+Disallow: /*?*fbclid=*
+Disallow: /*?*gclid=*
+Disallow: /*?*ref=*
+Disallow: /*?*source=*
+Disallow: /*?*medium=*
+Disallow: /*?*campaign=*
+Disallow: /*?*term=*
+Disallow: /*?*content=*
+Disallow: /*?*sessionid=*
+Disallow: /*?*sid=*
+Disallow: /*?*PHPSESSID=*
+Disallow: /*?*jsessionid=*
+Disallow: /*?*timestamp=*
+Disallow: /*?*debug=*
+Disallow: /*?*test=*
+Disallow: /*?*preview=*
+Disallow: /*?*print=*
+Disallow: /*?*download=*
+Disallow: /*?sort=*
+Disallow: /*?filter=*
+Disallow: /*?page=*
+Disallow: /*?limit=*
+Disallow: /*?offset=*
+
+# Block fragments and anchors
+Disallow: /*#*
+
+# Block duplicate content patterns
+Disallow: /*?lang=*
+Disallow: /*/print/
+Disallow: /*/mobile/
+Disallow: /*/amp/
+Disallow: /*&*
+Disallow: /*%*
+
+# ====================
+# ALLOWED RESOURCES
+# ====================
+
+# Explicitly allow important files
+Allow: /robots.txt
+Allow: /sitemap.xml
+Allow: /sitemap*.xml
+Allow: /favicon.ico
+Allow: /favicon.png
+Allow: /apple-touch-icon*.png
+Allow: /browserconfig.xml
+Allow: /manifest.json
+Allow: /site.webmanifest
+Allow: /.well-known/
+
+# Allow static assets
+Allow: /css/
+Allow: /js/
+Allow: /images/
+Allow: /img/
+Allow: /assets/
+Allow: /static/
+Allow: /media/
+Allow: /fonts/
+Allow: /icons/
+
+# Allow important pages
+Allow: /index.html
+Allow: /order.html
+Allow: /styles.css
+Allow: /app.js
+Allow: /sw.js
+
+# ====================
+# SEARCH ENGINE SPECIFIC RULES
+# ====================
+
+# Google Bot
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+# Google Images
+User-agent: Googlebot-Image
+Allow: /images/
+Allow: /img/
+Allow: /assets/images/
+Allow: /photo1.png
+Allow: /photo2.png
+Disallow: /
+
+# Google Mobile
+User-agent: Googlebot-Mobile
+Allow: /
+Crawl-delay: 1
+
+# Bing Bot
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# Yahoo Bot
+User-agent: Slurp
+Allow: /
+Crawl-delay: 2
+
+# Yandex Bot (Popular in Algeria)
+User-agent: YandexBot
+Allow: /
+Crawl-delay: 2
+
+# DuckDuckGo Bot
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 1
+
+# Baidu Bot
+User-agent: Baiduspider
+Allow: /
+Crawl-delay: 2
+
+# Facebook Bot (for social media sharing)
+User-agent: facebookexternalhit
+Allow: /
+Allow: /images/
+Allow: /photo1.png
+Allow: /photo2.png
+Crawl-delay: 1
+
+# Twitter Bot
+User-agent: Twitterbot
+Allow: /
+Allow: /images/
+Allow: /photo1.png
+Allow: /photo2.png
+Crawl-delay: 1
+
+# WhatsApp Bot
+User-agent: WhatsApp
+Allow: /
+Allow: /images/
+Allow: /photo1.png
+Allow: /photo2.png
+Crawl-delay: 1
+
+# Telegram Bot
+User-agent: TelegramBot
+Allow: /
+Allow: /images/
+Crawl-delay: 1
+
+# LinkedIn Bot
+User-agent: LinkedInBot
+Allow: /
+Allow: /images/
+Crawl-delay: 1
+
+# Pinterest Bot
+User-agent: Pinterest
+Allow: /
+Allow: /images/
+Crawl-delay: 1
+
+# ====================
+# BLOCK MALICIOUS BOTS
+# ====================
+
+# Email harvesters
+User-agent: EmailCollector
+Disallow: /
+
+User-agent: EmailSiphon
+Disallow: /
+
+User-agent: EmailWolf
+Disallow: /
+
+User-agent: ExtractorPro
+Disallow: /
+
+# Content scrapers
+User-agent: WebBandit
+Disallow: /
+
+User-agent: WebCopier
+Disallow: /
+
+User-agent: WebStripper
+Disallow: /
+
+User-agent: WebSauger
+Disallow: /
+
+User-agent: WebZip
+Disallow: /
+
+User-agent: WebReaper
+Disallow: /
+
+User-agent: WebAuto
+Disallow: /
+
+User-agent: TheNomad
+Disallow: /
+
+User-agent: WWW-Collector-E
+Disallow: /
+
+User-agent: RMA
+Disallow: /
+
+User-agent: libWeb/clsHTTP
+Disallow: /
+
+User-agent: asterias
+Disallow: /
+
+User-agent: httplib
+Disallow: /
+
+User-agent: turingos
+Disallow: /
+
+User-agent: spanner
+Disallow: /
+
+User-agent: InfoNaviRobot
+Disallow: /
+
+User-agent: Harvest
+Disallow: /
+
+User-agent: Bullseye
+Disallow: /
+
+User-agent: Mozilla/4.0 (compatible; BullsEye; Windows 95)
+Disallow: /
+
+User-agent: Crescent Internet ToolPak HTTP OLE Control
+Disallow: /
+
+User-agent: CherryPickerSE
+Disallow: /
+
+User-agent: CherryPickerElite
+Disallow: /
+
+User-agent: WebBandit
+Disallow: /
+
+User-agent: NICErsPRO
+Disallow: /
+
+User-agent: Microsoft URL Control
+Disallow: /
+
+User-agent: DittoSpyder
+Disallow: /
+
+User-agent: Foobot
+Disallow: /
+
+User-agent: WebmasterWorldForumBot
+Disallow: /
+
+User-agent: SpankBot
+Disallow: /
+
+User-agent: BotALot
+Disallow: /
+
+User-agent: lwp-trivial
+Disallow: /
+
+User-agent: BunnySlippers
+Disallow: /
+
+User-agent: Microsoft URL Control - 6.00.8169
+Disallow: /
+
+User-agent: URLy Warning
+Disallow: /
+
+User-agent: Wget
+Disallow: /
+
+User-agent: LinkWalker
+Disallow: /
+
+User-agent: cosmos
+Disallow: /
+
+User-agent: moget
+Disallow: /
+
+User-agent: hloader
+Disallow: /
+
+User-agent: humanlinks
+Disallow: /
+
+User-agent: LinkextractorPro
+Disallow: /
+
+User-agent: Offline Explorer
+Disallow: /
+
+User-agent: Mata Hari
+Disallow: /
+
+User-agent: LexiBot
+Disallow: /
+
+User-agent: Web Image Collector
+Disallow: /
+
+User-agent: The Intraformant
+Disallow: /
+
+User-agent: True_Robot
+Disallow: /
+
+User-agent: BlowFish
+Disallow: /
+
+User-agent: JennyBot
+Disallow: /
+
+User-agent: MIIxpc
+Disallow: /
+
+User-agent: BuiltBotTough
+Disallow: /
+
+User-agent: ProPowerBot
+Disallow: /
+
+User-agent: BackDoorBot
+Disallow: /
+
+User-agent: toCrawl/UrlDispatcher
+Disallow: /
+
+User-agent: WebEnhancer
+Disallow: /
+
+User-agent: suzuran
+Disallow: /
+
+User-agent: VCI
+Disallow: /
+
+User-agent: Szukacz
+Disallow: /
+
+User-agent: QueryN Metasearch
+Disallow: /
+
+User-agent: Openfind
+Disallow: /
+
+User-agent: Xenu's Link Sleuth
+Disallow: /
+
+User-agent: Xenu's
+Disallow: /
+
+User-agent: Zeus
+Disallow: /
+
+User-agent: RepoMonkey
+Disallow: /
+
+User-agent: Openbot
+Disallow: /
+
+User-agent: URL Control
+Disallow: /
+
+User-agent: Zeus Link Scout
+Disallow: /
+
+User-agent: Webster Pro
+Disallow: /
+
+User-agent: EroCrawler
+Disallow: /
+
+User-agent: LinkScan
+Disallow: /
+
+User-agent: Keyword Density
+Disallow: /
+
+User-agent: Kenjin Spider
+Disallow: /
+
+User-agent: Iron33
+Disallow: /
+
+User-agent: Bookmark search tool
+Disallow: /
+
+User-agent: GetRight
+Disallow: /
+
+User-agent: FairAd Client
+Disallow: /
+
+User-agent: Gaisbot
+Disallow: /
+
+User-agent: Aqua_Products
+Disallow: /
+
+User-agent: Radiation Retriever
+Disallow: /
+
+User-agent: Flaming AttackBot
+Disallow: /
+
+User-agent: Oracle Ultra Search
+Disallow: /
+
+User-agent: MSIECrawler
+Disallow: /
+
+User-agent: PerMan
+Disallow: /
+
+User-agent: searchpreview
+Disallow: /
+
+# SEO spam bots
+User-agent: AhrefsBot
+Crawl-delay: 10
+
+User-agent: MJ12bot
+Crawl-delay: 10
+
+User-agent: DotBot
+Crawl-delay: 10
+
+User-agent: SemrushBot
+Crawl-delay: 10
+
+User-agent: MegaIndex
+Crawl-delay: 10
+
+User-agent: BLEXBot
+Crawl-delay: 10
+
+# AI Training Bots (Optional - uncomment to block)
+# User-agent: GPTBot
+# Disallow: /
+# 
+# User-agent: ChatGPT-User
+# Disallow: /
+# 
+# User-agent: CCBot
+# Disallow: /
+# 
+# User-agent: Claude-Web
+# Disallow: /
+# 
+# User-agent: anthropic-ai
+# Disallow: /
+
+# ====================
+# SITEMAP LOCATIONS
+# ====================
+
+# Main sitemap
+Sitemap: https://zenabiodz.com/sitemap.xml
+
+# Additional sitemaps (if you create them)
+# Sitemap: https://zenabiodz.com/sitemap-pages.xml
+# Sitemap: https://zenabiodz.com/sitemap-products.xml
+# Sitemap: https://zenabiodz.com/sitemap-images.xml
+
+# ====================
+# ADDITIONAL NOTES
+# ====================
+
+# For better SEO:
+# 1. Replace "zenabiodz.com" with your actual domain
+# 2. Create and submit sitemap.xml to Google Search Console
+# 3. Monitor crawl errors regularly
+# 4. Update this file when adding new content sections
+# 5. Test robots.txt with Google Search Console robots.txt tester
+
+# Security Notes:
+# - This robots.txt blocks many common attack vectors
+# - It protects sensitive directories and files
+# - Regular monitoring is recommended
+# - Consider adding custom rules for your specific setup
+
+# Performance Notes:
+# - Crawl delays help prevent server overload
+# - Blocking unnecessary parameters reduces server load
+# - Regular cleanup of blocked bot lists recommended
+
+# Regional Considerations for Algeria:
+# - Yandex has some presence in North Africa
+# - Arabic SEO considerations already included
+# - Social media bots allowed for better engagement
+
+# ====================
+# END OF ROBOTS.TXT
+# ====================
