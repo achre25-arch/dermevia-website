@@ -54,19 +54,10 @@
         rateLimitInfo:"⚠️ لمنع الازدحام، لا يمكنك تقديم طلب آخر بنفس الهاتف لمدة 24 ساعة",
         note:"ملاحظة: سنقوم بالتواصل معك هاتفياً لتأكيد جميع التفاصيل.",
         labels:{ 
-          name:"👤 الاسم", 
-          phone:"📱 الهاتف", 
-          product:"🛍️ المنتج", 
-          wilaya:"📍 الولاية", 
-          commune:"🏘️ البلدية", 
-          delivery:"🚚 نوع التوصيل", 
-          product_price:"💳 سعر المنتج", 
-          delivery_price:"🚚 سعر التوصيل", 
-          total_price:"💰 الإجمالي" 
+          name:"👤 الاسم", phone:"📱 الهاتف", product:"🛍️ المنتج", wilaya:"📍 الولاية", commune:"🏘️ البلدية", delivery:"🚚 نوع التوصيل",
+          product_price:"💳 سعر المنتج", delivery_price:"🚚 سعر التوصيل", total_price:"💰 الإجمالي"
         },
-        deliveryHome:"توصيل للمنزل", 
-        deliveryOffice:"توصيل للمكتب", 
-        currency:"دج"
+        deliveryHome:"توصيل للمنزل", deliveryOffice:"توصيل للمكتب", currency:"دج"
       },
       fr: { 
         title:"🎉 Merci pour votre commande !", 
@@ -75,40 +66,22 @@
         rateLimitInfo:"⚠️ Pour éviter la surcharge, vous ne pouvez pas passer une autre commande avec le même téléphone pendant 24 heures",
         note:"Remarque : Nous vous contacterons par téléphone pour confirmer tous les détails.",
         labels:{ 
-          name:"👤 Nom", 
-          phone:"📱 Téléphone", 
-          product:"🛍️ Produit", 
-          wilaya:"📍 Wilaya", 
-          commune:"🏘️ Commune", 
-          delivery:"🚚 Type de livraison", 
-          product_price:"💳 Prix produit", 
-          delivery_price:"🚚 Frais de livraison", 
-          total_price:"💰 Total" 
+          name:"👤 Nom", phone:"📱 Téléphone", product:"🛍️ Produit", wilaya:"📍 Wilaya", commune:"🏘️ Commune", delivery:"🚚 Type de livraison",
+          product_price:"💳 Prix produit", delivery_price:"🚚 Frais de livraison", total_price:"💰 Total"
         },
-        deliveryHome:"Livraison à domicile", 
-        deliveryOffice:"Livraison au bureau", 
-		        currency:"DA"
+        deliveryHome:"Livraison à domicile", deliveryOffice:"Livraison au bureau", currency:"DA"
       }
     };
-    
     function getLang(){ 
-      try { 
-        const last=JSON.parse(localStorage.getItem('dermevia_last_order')||'null'); 
-        if(last && (last.lang==='ar'||last.lang==='fr')) return last.lang; 
-      } catch(e){} 
+      try { const last=JSON.parse(localStorage.getItem('dermevia_last_order')||'null'); if(last && (last.lang==='ar'||last.lang==='fr')) return last.lang; } catch(e){} 
       return localStorage.getItem('dermevia_lang')||'ar'; 
     }
-    
     function setDirByLang(lang){ 
       document.documentElement.lang=lang; 
       document.documentElement.dir=(lang==='ar')?'rtl':'ltr'; 
       document.getElementById('body').className=(lang==='ar')?'rtl':'ltr'; 
     }
-    
-    function fmt(v, lang){ 
-      return `${v} ${I18N[lang].currency}`; 
-    }
-    
+    function fmt(v, lang){ return `${v} ${I18N[lang].currency}`; }
     function render(){
       const lang = getLang();
       const L = I18N[lang];
@@ -118,16 +91,14 @@
       document.getElementById('okBox').textContent = L.ok;
       document.getElementById('rateLimitInfo').textContent = L.rateLimitInfo;
       document.getElementById('note').textContent = L.note;
-      
+
       const lastOrder = JSON.parse(localStorage.getItem('dermevia_last_order') || 'null');
-      
-      if (lastOrder && lastOrder.phone) {
-        document.getElementById('rateLimitInfo').style.display = 'block';
-      }
-      
       const s = document.getElementById('summary');
       if (!lastOrder) { s.innerHTML = ''; return; }
-      
+
+      // إظهار ملاحظة الحد 24h بعد الطلب
+      document.getElementById('rateLimitInfo').style.display = 'block';
+
       const deliveryText = (lastOrder.delivery_type === 'home') ? L.deliveryHome : L.deliveryOffice;
       s.innerHTML = `
         <div class="row"><span>${L.labels.name}</span><strong>${lastOrder.name||''}</strong></div>
@@ -140,12 +111,8 @@
         <div class="row"><span>${L.labels.delivery_price}</span><strong>${fmt(lastOrder.delivery_price||0,lang)}</strong></div>
         <div class="row"><span>${L.labels.total_price}</span><strong>${fmt(lastOrder.total_price||0,lang)}</strong></div>
       `;
-      
-      try {
-        if (typeof fbq === 'function') fbq('track','Purchase',{ value: Number(lastOrder.total_price||0), currency: 'DZD', content_name: lastOrder.product });
-      } catch(e){}
+      try { if (typeof fbq === 'function') fbq('track','Purchase',{ value: Number(lastOrder.total_price||0), currency: 'DZD', content_name: lastOrder.product }); } catch(e){}
     }
-    
     window.addEventListener('load', render);
   </script>
 </body>

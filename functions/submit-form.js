@@ -22,7 +22,7 @@ const CONFIG = {
 const I18N = {
   ar: {
     success: 'تم إرسال طلبك بنجاح.',
-    rate_limit_exceeded: 'عذراً، الحد اليومي: طلبان لكل رقم هاتف وطلبان لكل عنوان IP خلال 24 ساعة.',
+    rate_limit_exceeded: (hhmmss) => `عذراً، الحد اليومي: طلبان لكل رقم هاتف وطلبان لكل عنوان IP خلال 24 ساعة. يمكنك المحاولة خلال: ${hhmmss}`,
     invalid_name: 'الاسم غير صالح.',
     invalid_phone: 'رقم الهاتف غير صالح (10 أرقام ويبدأ بـ 05 أو 06 أو 07).',
     invalid_wilaya: 'الولاية غير صالحة.',
@@ -32,7 +32,7 @@ const I18N = {
   },
   fr: {
     success: 'Votre commande a été envoyée avec succès.',
-    rate_limit_exceeded: 'Désolé, limite quotidienne: 2 commandes par numéro ET 2 commandes par adresse IP (sur 24h).',
+    rate_limit_exceeded: (hhmmss) => `Désolé, limite quotidienne: 2 commandes par numéro et 2 par adresse IP (sur 24h). Réessayez dans: ${hhmmss}`,
     invalid_name: 'Nom invalide.',
     invalid_phone: 'Numéro de téléphone invalide (10 chiffres, commence par 05/06/07).',
     invalid_wilaya: 'Wilaya invalide.',
@@ -111,7 +111,16 @@ const escapeHTML = (t = '') =>
   String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
            .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
-// Upstash Redis: حدّ منفصل للهاتف ولـIP
+function formatHHMMSS(ms) {
+  let s = Math.max(0, Math.floor(ms / 1000));
+  const h = String(Math.floor(s / 3600)).padStart(2,'0');
+  s %= 3600;
+  const m = String(Math.floor(s / 60)).padStart(2,'0');
+  s = String(s % 60).padStart(2,'0');
+  return `${h}:${m}:${s}`;
+}
+
+// Upstash Redis: حدّ منفصل للهاتف ولـIP + إرجاع المتبقي PTTL
 async function rlIncrementBoth(ip, phoneNorm, { limit = CONFIG.DAILY_LIMIT, windowMs = CONFIG.WINDOW_MS } = {}) {
   const base = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -129,7 +138,9 @@ async function rlIncrementBoth(ip, phoneNorm, { limit = CONFIG.DAILY_LIMIT, wind
         ['SET', phoneKey, '0', 'NX', 'PX', String(windowMs)],
         ['SET', ipKey, '0', 'NX', 'PX', String(windowMs)],
         ['INCR', phoneKey],
-        ['INCR', ipKey]
+        ['INCR', ipKey],
+        ['PTTL', phoneKey],
+        ['PTTL', ipKey]
       ])
     });
     if (!res.ok) {
@@ -139,6 +150,8 @@ async function rlIncrementBoth(ip, phoneNorm, { limit = CONFIG.DAILY_LIMIT, wind
     const arr = await res.json().catch(()=> null);
     const pCount = Number((arr?.[2]?.result ?? arr?.[2]) ?? NaN);
     const iCount = Number((arr?.[3]?.result ?? arr?.[3]) ?? NaN);
+    const pTTL = Number((arr?.[4]?.result ?? arr?.[4]) ?? NaN);
+    const iTTL = Number((arr?.[5]?.result ?? arr?.[5]) ?? NaN);
 
     const ensureCount = async (key, fallback) => {
       if (Number.isFinite(fallback)) return fallback;
@@ -147,19 +160,34 @@ async function rlIncrementBoth(ip, phoneNorm, { limit = CONFIG.DAILY_LIMIT, wind
       const c = Number(j.result ?? j ?? NaN);
       return Number.isFinite(c) ? c : NaN;
     };
+    const ensurePTTL = (ttl, def) => Number.isFinite(ttl) && ttl >= 0 ? ttl : def;
 
     const phoneCount = await ensureCount(phoneKey, pCount);
     const ipCount = await ensureCount(ipKey, iCount);
+    const phoneTTL = ensurePTTL(pTTL, windowMs); // في أول مرة يرجع windowMs
+    const ipTTL = ensurePTTL(iTTL, windowMs);
+
     if (!Number.isFinite(phoneCount) || !Number.isFinite(ipCount)) {
       return { ok: false, error: 'redis_incr_parse_failed' };
     }
+
+    const allowed = phoneCount <= limit && ipCount <= limit;
+    const exceededPhone = phoneCount > limit;
+    const exceededIP = ipCount > limit;
+    const nextAvailableInMs = exceededPhone && exceededIP
+      ? Math.max(phoneTTL, ipTTL)
+      : exceededPhone ? phoneTTL
+      : exceededIP ? ipTTL
+      : 0;
 
     return {
       ok: true,
       limit,
       phoneKey, ipKey,
       phoneCount, ipCount,
-      allowed: phoneCount <= limit && ipCount <= limit
+      phoneTTL, ipTTL,
+      allowed,
+      nextAvailableInMs
     };
   } catch (e) {
     return { ok: false, error: String(e) };
@@ -339,7 +367,7 @@ exports.handler = async (event) => {
     // Rate limit — حد للهاتف وحد للـIP
     let rl = await rlIncrementBoth(order.client_ip, order.phone_norm, { limit: CONFIG.DAILY_LIMIT, windowMs: CONFIG.WINDOW_MS });
 
-    // احتياطي: إن لم تكن Upstash مهيّأة، استخدم Web App لفحص check_both
+    // احتياطي: إن لم تكن Upstash مهيّأة، استخدم Web App لفحص check_both (يرجع أزمنة reset)
     if (!rl.ok && rl.error === 'rate_limit_not_configured') {
       try {
         const gasUrl = process.env.GOOGLE_SHEETS_WEBAPP_URL;
@@ -350,14 +378,24 @@ exports.handler = async (event) => {
             headers: { 'Content-Type':'application/json' },
             body: JSON.stringify({ secret, action: 'check_both', data: { client_ip: order.client_ip, phone: order.phone } })
           });
-          const checkJson = await checkRes.json().catch(()=> ({}));
-          rl = {
-            ok: true,
-            limit: CONFIG.DAILY_LIMIT,
-            phoneCount: checkJson?.counts?.phone ?? 0,
-            ipCount: checkJson?.counts?.ip ?? 0,
-            allowed: checkJson?.allowed !== false
-          };
+          const j = await checkRes.json().catch(()=> ({}));
+
+          const limit = CONFIG.DAILY_LIMIT;
+          const phoneCount = Number(j?.counts?.phone ?? 0);
+          const ipCount = Number(j?.counts?.ip ?? 0);
+          const phoneTTL = Number(j?.resets?.phone ?? CONFIG.WINDOW_MS);
+          const ipTTL = Number(j?.resets?.ip ?? CONFIG.WINDOW_MS);
+          const allowed = j?.allowed !== false;
+
+          const exceededPhone = phoneCount >= limit;
+          const exceededIP = ipCount >= limit;
+          const nextAvailableInMs = exceededPhone && exceededIP
+            ? Math.max(phoneTTL, ipTTL)
+            : exceededPhone ? phoneTTL
+            : exceededIP ? ipTTL
+            : 0;
+
+          rl = { ok: true, limit, phoneCount, ipCount, phoneTTL, ipTTL, allowed, nextAvailableInMs };
         }
       } catch {}
     }
@@ -366,7 +404,9 @@ exports.handler = async (event) => {
       'X-Client-IP': order.client_ip,
       'X-Phone-Norm': order.phone_norm,
       ...(Number.isFinite(rl?.phoneCount) ? { 'X-Rate-Phone-Count': String(rl.phoneCount) } : {}),
-      ...(Number.isFinite(rl?.ipCount) ? { 'X-Rate-IP-Count': String(rl.ipCount) } : {})
+      ...(Number.isFinite(rl?.ipCount) ? { 'X-Rate-IP-Count': String(rl.ipCount) } : {}),
+      ...(Number.isFinite(rl?.phoneTTL) ? { 'X-Rate-Phone-Reset': String(rl.phoneTTL) } : {}),
+      ...(Number.isFinite(rl?.ipTTL) ? { 'X-Rate-IP-Reset': String(rl.ipTTL) } : {})
     };
 
     if (!rl.ok) {
@@ -377,14 +417,25 @@ exports.handler = async (event) => {
       };
     }
     if (!rl.allowed) {
+      const waitMs = Math.max(0, Number(rl.nextAvailableInMs || 0));
+      const hhmmss = formatHHMMSS(waitMs);
+
       return {
         statusCode: 429,
         headers: { ...corsHeaders, ...debugHeaders, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           success: false,
           error: 'Too many requests',
-          message: L(lang).rate_limit_exceeded,
-          limit_info: { limit: rl.limit, phone_count: rl.phoneCount, ip_count: rl.ipCount }
+          message: L(lang).rate_limit_exceeded(hhmmss),
+          limit_info: {
+            limit: rl.limit,
+            phone_count: rl.phoneCount,
+            ip_count: rl.ipCount,
+            phone_ttl_ms: rl.phoneTTL,
+            ip_ttl_ms: rl.ipTTL,
+            next_available_in_ms: waitMs,
+            next_available_at: Date.now() + waitMs
+          }
         })
       };
     }
