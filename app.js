@@ -786,6 +786,11 @@ function updatePriceDisplay() {
     priceDisplay.style.display = 'block';
   } else { priceDisplay.style.display = 'none'; }
 }
+function updateFinalPriceAmount() {
+  const el = document.getElementById('finalPriceAmount');
+  const price = parseInt(document.getElementById('productPrice')?.value || '0') || 0;
+  if (el) el.textContent = formatCurrency(price);
+}
 function updateFloatingCTA() {
   const lang = getLang();
   const el = document.getElementById('floatingCTAText');
@@ -811,6 +816,13 @@ function showOrderForm() {
 }
 
 // =========== LANGUAGE ===========
+function translateByDataAttrs(lang) {
+  // عناصر نصية تحمل data-ar / data-fr
+  document.querySelectorAll('[data-ar],[data-fr]').forEach(el => {
+    const val = (lang === 'ar') ? el.getAttribute('data-ar') : el.getAttribute('data-fr');
+    if (val != null) el.textContent = val;
+  });
+}
 function switchLanguage(lang) {
   setLang(lang);
   const html = document.documentElement;
@@ -851,6 +863,10 @@ function switchLanguage(lang) {
   };
   Object.entries(footerElements).forEach(([id, val]) => { const el = document.getElementById(id); if (el && val) el.textContent = val; });
 
+  // تحديت شامل لكل العناصر التي تحمل data-ar/data-fr
+  translateByDataAttrs(lang);
+
+  // تبديل شهادات العملاء
   const arTestimonials = document.querySelectorAll('.ar-testimonial');
   const frTestimonials = document.querySelectorAll('.fr-testimonial');
   if (lang === 'ar') { arTestimonials.forEach(el => el.style.display = 'block'); frTestimonials.forEach(el => el.style.display = 'none'); }
@@ -859,6 +875,7 @@ function switchLanguage(lang) {
   updateSlideshowForLanguage(lang);
   updateHeaderPrice();
   updatePriceDisplay();
+  updateFinalPriceAmount();
   updateFloatingCTA();
 }
 function updateSlideshowForLanguage(lang) {
@@ -937,9 +954,12 @@ document.addEventListener('DOMContentLoaded', async function() {
   if (orderForm) orderForm.addEventListener('submit', handleOrderSubmissionSecure);
 
   updateQuantity(1);
+  // الترجمة الأولية + تحديث العبارات ذات data-*
+  translateByDataAttrs(getLang());
   switchLanguage(getLang());
   updateHeaderPrice();
   updatePriceDisplay();
+  updateFinalPriceAmount();
   updateFloatingCTA();
   toggleFloatingCTA();
   trackViewContent();
@@ -952,7 +972,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   }
 
-  console.log('✅ Dermevia Secure App Loaded (with countdown + redirect)');
+  console.log('✅ Dermevia Secure App Loaded (with i18n data-attrs support)');
 });
 
 // =========== HELPERS ===========
@@ -988,4 +1008,4 @@ window.closeModal = closeModal;
 window.modalPrev = modalPrev;
 window.modalNext = modalNext;
 
-console.log('🔧 Dermevia App - Netlify Functions Enhanced Version with countdown + redirect');
+console.log('🔧 Dermevia App - Netlify Functions Enhanced Version');
