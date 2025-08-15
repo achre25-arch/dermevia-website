@@ -1,8 +1,11 @@
 // functions/submit-form.js
+// حدّ يومي مستقل: طلبان لكل رقم هاتف وطلبان لكل عنوان IP خلال 24 ساعة
+// Upstash Redis لتخزين العدّادات + إرسال تلغرام + إضافة إلى Google Sheets عبر Web App
+
 const crypto = require('crypto');
 
 const CONFIG = {
-  DAILY_LIMIT: 2,        // طلبان خلال 24 ساعة لنفس (IP + phone_norm)
+  DAILY_LIMIT: 2,        // طلبان خلال 24 ساعة لكل هاتف ولكل IP
   WINDOW_MS: 86400000,   // 24 ساعة
   TELEGRAM_API_BASE: 'https://api.telegram.org/bot',
   TELEGRAM_TIMEOUT: 15000,
@@ -19,7 +22,7 @@ const CONFIG = {
 const I18N = {
   ar: {
     success: 'تم إرسال طلبك بنجاح.',
-    rate_limit_exceeded: 'عذراً، لقد وصلت إلى الحد اليومي. يُسمح بطلبين فقط خلال 24 ساعة لنفس رقم الهاتف وعنوان IP.',
+    rate_limit_exceeded: 'عذراً، الحد اليومي: طلبان لكل رقم هاتف وطلبان لكل عنوان IP خلال 24 ساعة.',
     invalid_name: 'الاسم غير صالح.',
     invalid_phone: 'رقم الهاتف غير صالح (10 أرقام ويبدأ بـ 05 أو 06 أو 07).',
     invalid_wilaya: 'الولاية غير صالحة.',
@@ -29,7 +32,7 @@ const I18N = {
   },
   fr: {
     success: 'Votre commande a été envoyée avec succès.',
-    rate_limit_exceeded: 'Désolé, vous avez atteint la limite quotidienne. Deux commandes sont autorisées en 24h pour le même numéro et la même adresse IP.',
+    rate_limit_exceeded: 'Désolé, limite quotidienne: 2 commandes par numéro ET 2 commandes par adresse IP (sur 24h).',
     invalid_name: 'Nom invalide.',
     invalid_phone: 'Numéro de téléphone invalide (10 chiffres, commence par 05/06/07).',
     invalid_wilaya: 'Wilaya invalide.',
@@ -57,11 +60,8 @@ function isValidOrigin(origin) {
 function normalizeIP(ip) {
   if (!ip) return '0.0.0.0';
   let v = String(ip).trim();
-  // إزالة IPv6-mapped IPv4
   if (v.startsWith('::ffff:')) v = v.slice(7);
-  // إزالة الأقواس
   v = v.replace(/^\[|\]$/g, '');
-  // IPv6 localhost → عالجها كـ 127.0.0.1 للاتساق محلياً
   if (v === '::1') v = '127.0.0.1';
   return v;
 }
@@ -70,8 +70,6 @@ function getClientIP(event) {
   const h = Object.fromEntries(
     Object.entries(event.headers || {}).map(([k, v]) => [String(k).toLowerCase(), v])
   );
-
-  // ترتيب أولوية التقاط الـIP
   const chain = [
     h['cf-connecting-ip'],
     h['x-client-ip'],
@@ -83,13 +81,16 @@ function getClientIP(event) {
     event.ip,
     event?.requestContext?.identity?.sourceIp
   ].filter(Boolean);
-
   return normalizeIP(chain[0]);
 }
 
 function sanitizeText(s, max = CONFIG.MAX_SANITIZED_LENGTH) {
   if (typeof s !== 'string') return '';
-  return s.replace(/[<>"'&]/g,'').replace(/[\x00-\x1f\x7f-\x9f]/g,'').replace(/\s+/g,' ').trim().substring(0, max);
+  return s.replace(/[<>"'&]/g,'')
+          .replace(/[\x00-\x1f\x7f-\x9f]/g,'')
+          .replace(/\s+/g,' ')
+          .trim()
+          .substring(0, max);
 }
 
 function normalizePhone(phone) {
@@ -110,13 +111,14 @@ const escapeHTML = (t = '') =>
   String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
            .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
-// Upstash Redis: Pipeline (SET key 0 NX PX windowMs) ثم INCR key
-async function rlIncrement(ip, phoneNorm, { limit = CONFIG.DAILY_LIMIT, windowMs = CONFIG.WINDOW_MS } = {}) {
+// Upstash Redis: حدّ منفصل للهاتف ولـIP
+async function rlIncrementBoth(ip, phoneNorm, { limit = CONFIG.DAILY_LIMIT, windowMs = CONFIG.WINDOW_MS } = {}) {
   const base = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!base || !token) return { ok: false, error: 'rate_limit_not_configured' };
 
-  const key = `rate:${ip}|${phoneNorm}`;
+  const phoneKey = `rate:p:${phoneNorm}`;
+  const ipKey = `rate:i:${ip}`;
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   try {
@@ -124,29 +126,41 @@ async function rlIncrement(ip, phoneNorm, { limit = CONFIG.DAILY_LIMIT, windowMs
       method: 'POST',
       headers,
       body: JSON.stringify([
-        ['SET', key, '0', 'NX', 'PX', String(windowMs)],
-        ['INCR', key]
+        ['SET', phoneKey, '0', 'NX', 'PX', String(windowMs)],
+        ['SET', ipKey, '0', 'NX', 'PX', String(windowMs)],
+        ['INCR', phoneKey],
+        ['INCR', ipKey]
       ])
     });
-
     if (!res.ok) {
-      const txt = await res.text().catch(()=>'');
-      return { ok: false, error: `redis_pipeline_failed: ${res.status} ${txt}` };
+      const t = await res.text().catch(()=> '');
+      return { ok: false, error: `redis_pipeline_failed: ${res.status} ${t}` };
     }
+    const arr = await res.json().catch(()=> null);
+    const pCount = Number((arr?.[2]?.result ?? arr?.[2]) ?? NaN);
+    const iCount = Number((arr?.[3]?.result ?? arr?.[3]) ?? NaN);
 
-    const arr = await res.json().catch(()=>null);
-    // Upstash يعيد مصفوفة نتائج، ثاني عنصر هو نتيجة INCR
-    const second = Array.isArray(arr) ? (arr[1] ?? {}) : {};
-    const count = Number(second.result ?? second ?? NaN);
-    if (!Number.isFinite(count)) {
-      // محاولة احتياطية: INCR مباشر
+    const ensureCount = async (key, fallback) => {
+      if (Number.isFinite(fallback)) return fallback;
       const r = await fetch(`${base}/incr/${encodeURIComponent(key)}`, { headers: { Authorization: `Bearer ${token}` } });
       const j = await r.json().catch(()=> ({}));
-      const c2 = Number(j.result ?? j ?? NaN);
-      if (!Number.isFinite(c2)) return { ok: false, error: 'redis_incr_parse_failed' };
-      return { ok: true, key, count: c2, limit, allowed: c2 <= limit };
+      const c = Number(j.result ?? j ?? NaN);
+      return Number.isFinite(c) ? c : NaN;
+    };
+
+    const phoneCount = await ensureCount(phoneKey, pCount);
+    const ipCount = await ensureCount(ipKey, iCount);
+    if (!Number.isFinite(phoneCount) || !Number.isFinite(ipCount)) {
+      return { ok: false, error: 'redis_incr_parse_failed' };
     }
-    return { ok: true, key, count, limit, allowed: count <= limit };
+
+    return {
+      ok: true,
+      limit,
+      phoneKey, ipKey,
+      phoneCount, ipCount,
+      allowed: phoneCount <= limit && ipCount <= limit
+    };
   } catch (e) {
     return { ok: false, error: String(e) };
   }
@@ -214,7 +228,7 @@ ${order.discount_amount > 0 ? `💸 <b>خصم:</b> ${order.discount_amount} دج
   }
 }
 
-// Google Sheets append (اختياري)
+// Google Sheets append
 async function sendToGoogleSheet(order) {
   const url = process.env.GOOGLE_SHEETS_WEBAPP_URL;
   const secret = process.env.GOOGLE_SHEETS_SECRET;
@@ -302,7 +316,7 @@ exports.handler = async (event) => {
       timestamp: Date.now()
     };
 
-    // تحقق الحقول برسائل اللغة
+    // تحقق الحقول
     if (!order.name || order.name.length < 2) {
       return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_name }) };
     }
@@ -322,15 +336,37 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_delivery_type }) };
     }
 
-    // Rate limit — مفتاح مركب (IP + phone_norm) بعملية ذرية
-    const rl = await rlIncrement(order.client_ip, order.phone_norm, { limit: CONFIG.DAILY_LIMIT, windowMs: CONFIG.WINDOW_MS });
+    // Rate limit — حد للهاتف وحد للـIP
+    let rl = await rlIncrementBoth(order.client_ip, order.phone_norm, { limit: CONFIG.DAILY_LIMIT, windowMs: CONFIG.WINDOW_MS });
 
-    // هيدرز ديباغ لمعرفة المفتاح والعدّاد والـIP النهائي
+    // احتياطي: إن لم تكن Upstash مهيّأة، استخدم Web App لفحص check_both
+    if (!rl.ok && rl.error === 'rate_limit_not_configured') {
+      try {
+        const gasUrl = process.env.GOOGLE_SHEETS_WEBAPP_URL;
+        const secret = process.env.GOOGLE_SHEETS_SECRET;
+        if (gasUrl && secret) {
+          const checkRes = await fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json' },
+            body: JSON.stringify({ secret, action: 'check_both', data: { client_ip: order.client_ip, phone: order.phone } })
+          });
+          const checkJson = await checkRes.json().catch(()=> ({}));
+          rl = {
+            ok: true,
+            limit: CONFIG.DAILY_LIMIT,
+            phoneCount: checkJson?.counts?.phone ?? 0,
+            ipCount: checkJson?.counts?.ip ?? 0,
+            allowed: checkJson?.allowed !== false
+          };
+        }
+      } catch {}
+    }
+
     const debugHeaders = {
       'X-Client-IP': order.client_ip,
       'X-Phone-Norm': order.phone_norm,
-      'X-Rate-Key': rl.key || `rate:${order.client_ip}|${order.phone_norm}`,
-      ...(Number.isFinite(rl.count) ? { 'X-Rate-Count': String(rl.count) } : {})
+      ...(Number.isFinite(rl?.phoneCount) ? { 'X-Rate-Phone-Count': String(rl.phoneCount) } : {}),
+      ...(Number.isFinite(rl?.ipCount) ? { 'X-Rate-IP-Count': String(rl.ipCount) } : {})
     };
 
     if (!rl.ok) {
@@ -348,7 +384,7 @@ exports.handler = async (event) => {
           success: false,
           error: 'Too many requests',
           message: L(lang).rate_limit_exceeded,
-          limit_info: { limit: rl.limit, count: rl.count }
+          limit_info: { limit: rl.limit, phone_count: rl.phoneCount, ip_count: rl.ipCount }
         })
       };
     }
@@ -356,7 +392,7 @@ exports.handler = async (event) => {
     // Telegram
     await sendToTelegram(order);
 
-    // Google Sheets (اختياري)
+    // Google Sheets
     const sheetsResult = await sendToGoogleSheet(order);
 
     const processingTime = Date.now() - startTime;
@@ -377,8 +413,12 @@ exports.handler = async (event) => {
     const processingTime = Date.now() - startTime;
     return {
       statusCode: 500,
-      headers: { 'Access-Control-Allow-Origin': isValidOrigin(event.headers.origin || event.headers.Origin) ? (event.headers.origin || event.headers.Origin) : CONFIG.ALLOWED_ORIGINS[0],
-                 'Vary': 'Origin', 'Content-Type': 'application/json', 'X-Processing-Time': String(processingTime) },
+      headers: {
+        'Access-Control-Allow-Origin': isValidOrigin(event.headers.origin || event.headers.Origin) ? (event.headers.origin || event.headers.Origin) : CONFIG.ALLOWED_ORIGINS[0],
+        'Vary': 'Origin',
+        'Content-Type': 'application/json',
+        'X-Processing-Time': String(processingTime)
+      },
       body: JSON.stringify({ success: false, error: 'Internal server error', processing_time: processingTime })
     };
   }
