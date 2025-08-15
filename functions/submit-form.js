@@ -2,9 +2,7 @@
 const crypto = require('crypto');
 
 const CONFIG = {
-  MAX_REQUESTS_PER_HOUR: 5,
-  MAX_REQUESTS_PER_DAY: 2, // طلبان في 24 ساعة
-  RATE_LIMIT_WINDOW: 3600000,
+  DAILY_LIMIT: 2, // طلبان خلال 24 ساعة لنفس (IP + phone_norm)
   DAILY_LIMIT_WINDOW: 86400000,
   TELEGRAM_API_BASE: 'https://api.telegram.org/bot',
   TELEGRAM_TIMEOUT: 15000,
@@ -20,7 +18,7 @@ const CONFIG = {
 const I18N = {
   ar: {
     success: 'تم إرسال طلبك بنجاح.',
-    rate_limit_exceeded: 'عذراً، لقد وصلت إلى الحد اليومي لعدد الطلبات. يُسمح بطلبين فقط خلال 24 ساعة لنفس رقم الهاتف وعنوان IP.',
+    rate_limit_exceeded: 'عذراً، لقد وصلت إلى الحد اليومي. يُسمح بطلبين فقط خلال 24 ساعة لنفس رقم الهاتف وعنوان IP.',
     invalid_name: 'الاسم غير صالح.',
     invalid_phone: 'رقم الهاتف غير صالح (10 أرقام ويبدأ بـ 05 أو 06 أو 07).',
     invalid_wilaya: 'الولاية غير صالحة.',
@@ -41,17 +39,6 @@ const I18N = {
 };
 const L = (lang) => (I18N[lang] || I18N.ar);
 
-// Fallback (غير دائم)
-const rateStore = new Map();
-
-function sanitizeInput(input, maxLength = CONFIG.MAX_SANITIZED_LENGTH) {
-  if (typeof input !== 'string') return '';
-  return input.replace(/[<>"'&]/g, '').replace(/[\x00-\x1f\x7f-\x9f]/g, '').replace(/\s+/g, ' ').trim().substring(0, maxLength);
-}
-function validatePhone(phone) {
-  const cleanPhone = String(phone || '').replace(/\D/g, '');
-  return /^(05|06|07)\d{8}$/.test(cleanPhone);
-}
 function isValidOrigin(origin) {
   if (!origin) return false;
   if (CONFIG.ALLOWED_ORIGINS.includes(origin)) return true;
@@ -61,25 +48,26 @@ function isValidOrigin(origin) {
   } catch { return false; }
 }
 function getClientIP(event) {
-  const forwarded = event.headers['x-forwarded-for'];
-  if (forwarded) return forwarded.split(',')[0].trim();
+  const f = event.headers['x-forwarded-for'];
+  if (f) return f.split(',')[0].trim();
   return event.headers['x-nf-client-connection-ip'] || '127.0.0.1';
 }
-function checkRateLimitMemory(identifier) {
-  const now = Date.now();
-  const windowMs = CONFIG.DAILY_LIMIT_WINDOW;
-  const arr = rateStore.get(identifier) || [];
-  const valid = arr.filter(ts => (now - ts) < windowMs);
-  if (valid.length >= CONFIG.MAX_REQUESTS_PER_DAY) return { allowed: false, reason: 'daily_limit' };
-  return { allowed: true, count: valid.length, remaining: CONFIG.MAX_REQUESTS_PER_DAY - valid.length };
+function sanitizeText(input, maxLength = CONFIG.MAX_SANITIZED_LENGTH) {
+  if (typeof input !== 'string') return '';
+  return input.replace(/[<>"'&]/g, '').replace(/[\x00-\x1f\x7f-\x9f]/g, '').replace(/\s+/g, ' ').trim().substring(0, maxLength);
 }
-function recordRequestMemory(identifier) {
-  const now = Date.now();
-  const windowMs = CONFIG.DAILY_LIMIT_WINDOW;
-  const arr = rateStore.get(identifier) || [];
-  arr.push(now);
-  const valid = arr.filter(ts => (Date.now() - ts) < windowMs);
-  rateStore.set(identifier, valid);
+function normalizePhone(phone) {
+  const d = String(phone || '').replace(/\D/g, '');
+  if (d.startsWith('213')) {
+    const rest = d.slice(3);
+    if (rest.length === 9) return '0' + rest;
+    if (rest.length === 10 && rest.startsWith('0')) return rest;
+  }
+  if (d.length === 10 && d.startsWith('0')) return d;
+  return d;
+}
+function validatePhoneNormalized(pn) {
+  return /^(05|06|07)\d{8}$/.test(pn);
 }
 
 const escapeHTML = (t = '') =>
@@ -146,12 +134,22 @@ ${order.discount_amount > 0 ? `💸 <b>خصم:</b> ${order.discount_amount} دج
   }
 }
 
-// Google Sheets calls
-async function gasCheckAndRecord(ip, phone) {
+// Google Apps Script calls
+async function gasCheck(ip, phone, limit, windowMs) {
   const url = process.env.GOOGLE_SHEETS_WEBAPP_URL;
   const secret = process.env.GOOGLE_SHEETS_SECRET;
-  if (!url || !secret) return null; // غير مفعّل
-  const payload = { secret, action: 'check_and_record', ip, phone, limit: 2, windowMs: CONFIG.DAILY_LIMIT_WINDOW };
+  if (!url || !secret) throw new Error('GAS not configured');
+  const payload = { secret, action: 'check', ip, phone, limit, windowMs };
+  const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  let json = {};
+  try { json = await res.json(); } catch { json = { parse_error: true, status: res.status }; }
+  return json;
+}
+async function gasRecord(ip, phone) {
+  const url = process.env.GOOGLE_SHEETS_WEBAPP_URL;
+  const secret = process.env.GOOGLE_SHEETS_SECRET;
+  if (!url || !secret) throw new Error('GAS not configured');
+  const payload = { secret, action: 'record', ip, phone };
   const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
   let json = {};
   try { json = await res.json(); } catch { json = { parse_error: true, status: res.status }; }
@@ -185,7 +183,7 @@ exports.handler = async (event) => {
   const origin = event.headers.origin || event.headers.Origin;
 
   const corsHeaders = {
-    'Access-Control-Allow-Origin': isValidOrigin(origin) ? origin : CONFIG.ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Origin': isValidOrigin(origin) ? origin : (origin || CONFIG.ALLOWED_ORIGINS[0]),
     'Vary': 'Origin',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Requested-With',
@@ -193,26 +191,32 @@ exports.handler = async (event) => {
   };
 
   try {
-    if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: corsHeaders, body: '' };
+    if (event.httpMethod === 'OPTIONS') {
+      return { statusCode: 200, headers: corsHeaders, body: '' };
+    }
     if (event.httpMethod !== 'POST') {
       return { statusCode: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Method not allowed' }) };
     }
 
     let data;
     try { data = JSON.parse(event.body || '{}'); }
-    catch { return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid JSON body' }) }; }
+    catch {
+      return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid JSON body' }) };
+    }
 
-    const clientIP = getClientIP(event);
     const lang = data.lang === 'fr' ? 'fr' : 'ar';
+    const clientIP = getClientIP(event);
 
+    // بناء الطلب
     const order = {
       id: crypto.randomBytes(8).toString('hex'),
-      name: sanitizeInput(data.name),
-      phone: sanitizeInput(data.phone),
-      wilaya: sanitizeInput(data.wilaya),
-      commune: sanitizeInput(data.commune),
-      delivery_type: sanitizeInput(data.delivery_type),
-      product: sanitizeInput(data.product),
+      name: sanitizeText(data.name),
+      phone: sanitizeText(data.phone),
+      phone_norm: normalizePhone(data.phone),
+      wilaya: sanitizeText(data.wilaya),
+      commune: sanitizeText(data.commune),
+      delivery_type: sanitizeText(data.delivery_type),
+      product: sanitizeText(data.product),
       quantity: parseInt(data.quantity) || 1,
       product_price: parseInt(data.product_price) || 0,
       final_price: parseInt(data.final_price) || 0,
@@ -226,11 +230,11 @@ exports.handler = async (event) => {
       timestamp: Date.now()
     };
 
-    // تحقق الحقول (برسائل حسب اللغة)
+    // تحقق الحقول
     if (!order.name || order.name.length < 2) {
       return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_name }) };
     }
-    if (!validatePhone(order.phone)) {
+    if (!validatePhoneNormalized(order.phone_norm)) {
       return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_phone }) };
     }
     if (!order.wilaya || order.wilaya.length < 2) {
@@ -246,38 +250,29 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_delivery_type }) };
     }
 
-    // حد يومي دائم عبر GAS
-    const gasLimit = await gasCheckAndRecord(order.client_ip, order.phone);
-    if (gasLimit && gasLimit.success !== false) {
-      if (gasLimit.allowed === false) {
-        return {
-          statusCode: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            success: false,
-            error: 'Too many requests',
-            message: L(lang).rate_limit_exceeded,
-            limit_info: { limit: 2, remaining: 0, reset_in_ms: gasLimit.resetInMs || undefined }
-          })
-        };
-      }
-    } else {
-      // Fallback غير دائم
-      const id = crypto.createHash('sha256').update(`${order.client_ip}:${order.phone}`).digest('hex').substring(0, 16);
-      const mem = checkRateLimitMemory(id);
-      if (!mem.allowed) {
-        return {
-          statusCode: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ success: false, error: 'Too many requests', message: L(lang).rate_limit_exceeded })
-        };
-      }
-      recordRequestMemory(id);
+    // 1) تحقق الحد: يعتمد على ثنائي (IP + phone_norm) فقط
+    const check = await gasCheck(order.client_ip, order.phone_norm, CONFIG.DAILY_LIMIT, CONFIG.DAILY_LIMIT_WINDOW);
+    if (!check || check.success === false || check.allowed === false) {
+      return {
+        statusCode: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          success: false,
+          error: 'Too many requests',
+          message: L(lang).rate_limit_exceeded,
+          limit_info: check && check.success ? { limit: check.limit, remaining: 0, reset_in_ms: check.resetInMs } : undefined
+        })
+      };
     }
 
-    // Telegram ثم Google Sheets
+    // 2) Telegram
     await sendToTelegram(order);
+
+    // 3) Append إلى Sheets
     const sheetsResult = await gasAppendOrder(order);
+
+    // 4) سجل الاستهلاك فعلياً بعد النجاح
+    await gasRecord(order.client_ip, order.phone_norm);
 
     const processingTime = Date.now() - startTime;
     return {
@@ -288,7 +283,6 @@ exports.handler = async (event) => {
         message: L(lang).success,
         order_id: order.id,
         processing_time: processingTime,
-        limit_info: gasLimit && gasLimit.success ? { limit: gasLimit.limit, remaining: gasLimit.remaining } : undefined,
         sheets_result: sheetsResult
       })
     };
@@ -298,7 +292,12 @@ exports.handler = async (event) => {
     const processingTime = Date.now() - startTime;
     return {
       statusCode: 500,
-      headers: { 'Access-Control-Allow-Origin': isValidOrigin(event.headers.origin || event.headers.Origin) ? (event.headers.origin || event.headers.Origin) : CONFIG.ALLOWED_ORIGINS[0], 'Vary': 'Origin', 'Content-Type': 'application/json', 'X-Processing-Time': String(processingTime) },
+      headers: {
+        'Access-Control-Allow-Origin': isValidOrigin(event.headers.origin || event.headers.Origin) ? (event.headers.origin || event.headers.Origin) : (event.headers.origin || event.headers.Origin || CONFIG.ALLOWED_ORIGINS[0]),
+        'Vary': 'Origin',
+        'Content-Type': 'application/json',
+        'X-Processing-Time': String(processingTime)
+      },
       body: JSON.stringify({ success: false, error: 'Internal server error', processing_time: processingTime })
     };
   }
