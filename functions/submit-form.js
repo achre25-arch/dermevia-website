@@ -2,8 +2,8 @@
 const crypto = require('crypto');
 
 const CONFIG = {
-  DAILY_LIMIT: 2,                 // طلبان خلال 24 ساعة لنفس (IP + phone_norm)
-  WINDOW_MS: 86400000,            // 24 ساعة
+  DAILY_LIMIT: 2,        // طلبان خلال 24 ساعة لنفس (IP + phone_norm)
+  WINDOW_MS: 86400000,   // 24 ساعة
   TELEGRAM_API_BASE: 'https://api.telegram.org/bot',
   TELEGRAM_TIMEOUT: 15000,
   ALLOWED_ORIGINS: [
@@ -40,7 +40,7 @@ const I18N = {
 };
 const L = (lang) => (I18N[lang] || I18N.ar);
 
-// Utilities
+// Helpers
 function isValidOrigin(origin) {
   if (!origin) return false;
   if (CONFIG.ALLOWED_ORIGINS.includes(origin)) return true;
@@ -53,15 +53,45 @@ function isValidOrigin(origin) {
     );
   } catch { return false; }
 }
-function getClientIP(event) {
-  const f = event.headers['x-forwarded-for'];
-  if (f) return f.split(',')[0].trim();
-  return event.headers['x-nf-client-connection-ip'] || '127.0.0.1';
+
+function normalizeIP(ip) {
+  if (!ip) return '0.0.0.0';
+  let v = String(ip).trim();
+  // إزالة IPv6-mapped IPv4
+  if (v.startsWith('::ffff:')) v = v.slice(7);
+  // إزالة الأقواس
+  v = v.replace(/^\[|\]$/g, '');
+  // IPv6 localhost → عالجها كـ 127.0.0.1 للاتساق محلياً
+  if (v === '::1') v = '127.0.0.1';
+  return v;
 }
+
+function getClientIP(event) {
+  const h = Object.fromEntries(
+    Object.entries(event.headers || {}).map(([k, v]) => [String(k).toLowerCase(), v])
+  );
+
+  // ترتيب أولوية التقاط الـIP
+  const chain = [
+    h['cf-connecting-ip'],
+    h['x-client-ip'],
+    h['true-client-ip'],
+    (h['x-forwarded-for'] || '').split(',')[0],
+    h['x-real-ip'],
+    h['x-nf-client-connection-ip'],
+    h['client-ip'],
+    event.ip,
+    event?.requestContext?.identity?.sourceIp
+  ].filter(Boolean);
+
+  return normalizeIP(chain[0]);
+}
+
 function sanitizeText(s, max = CONFIG.MAX_SANITIZED_LENGTH) {
   if (typeof s !== 'string') return '';
   return s.replace(/[<>"'&]/g,'').replace(/[\x00-\x1f\x7f-\x9f]/g,'').replace(/\s+/g,' ').trim().substring(0, max);
 }
+
 function normalizePhone(phone) {
   const d = String(phone || '').replace(/\D/g, '');
   if (d.startsWith('213')) {
@@ -75,34 +105,51 @@ function normalizePhone(phone) {
 function validatePhoneNormalized(pn) {
   return /^(05|06|07)\d{8}$/.test(pn);
 }
-const escapeHTML = (t = '') =>
-  String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
-// Redis (Upstash) rate limit: atomic INCR + set TTL only on first hit
+const escapeHTML = (t = '') =>
+  String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+           .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+// Upstash Redis: Pipeline (SET key 0 NX PX windowMs) ثم INCR key
 async function rlIncrement(ip, phoneNorm, { limit = CONFIG.DAILY_LIMIT, windowMs = CONFIG.WINDOW_MS } = {}) {
   const base = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!base || !token) {
-    return { ok: false, error: 'rate_limit_not_configured' };
-  }
+  if (!base || !token) return { ok: false, error: 'rate_limit_not_configured' };
+
   const key = `rate:${ip}|${phoneNorm}`;
-  const headers = { Authorization: `Bearer ${token}` };
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-  // 1) INCR
-  const r1 = await fetch(`${base}/incr/${encodeURIComponent(key)}`, { headers });
-  if (!r1.ok) {
-    const txt = await r1.text().catch(()=>'');
-    return { ok: false, error: `redis_incr_failed: ${r1.status} ${txt}` };
+  try {
+    const res = await fetch(`${base}/pipeline`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify([
+        ['SET', key, '0', 'NX', 'PX', String(windowMs)],
+        ['INCR', key]
+      ])
+    });
+
+    if (!res.ok) {
+      const txt = await res.text().catch(()=>'');
+      return { ok: false, error: `redis_pipeline_failed: ${res.status} ${txt}` };
+    }
+
+    const arr = await res.json().catch(()=>null);
+    // Upstash يعيد مصفوفة نتائج، ثاني عنصر هو نتيجة INCR
+    const second = Array.isArray(arr) ? (arr[1] ?? {}) : {};
+    const count = Number(second.result ?? second ?? NaN);
+    if (!Number.isFinite(count)) {
+      // محاولة احتياطية: INCR مباشر
+      const r = await fetch(`${base}/incr/${encodeURIComponent(key)}`, { headers: { Authorization: `Bearer ${token}` } });
+      const j = await r.json().catch(()=> ({}));
+      const c2 = Number(j.result ?? j ?? NaN);
+      if (!Number.isFinite(c2)) return { ok: false, error: 'redis_incr_parse_failed' };
+      return { ok: true, key, count: c2, limit, allowed: c2 <= limit };
+    }
+    return { ok: true, key, count, limit, allowed: count <= limit };
+  } catch (e) {
+    return { ok: false, error: String(e) };
   }
-  const j1 = await r1.json().catch(()=> ({}));
-  const count = typeof j1.result === 'number' ? j1.result : Number(j1);
-
-  // 2) إذا كانت أول مرة، ضع TTL = 24 ساعة
-  if (count === 1) {
-    await fetch(`${base}/pexpire/${encodeURIComponent(key)}/${windowMs}`, { headers }).catch(()=>{});
-  }
-
-  return { ok: true, allowed: count <= limit, count, limit };
 }
 
 // Telegram
@@ -167,14 +214,12 @@ ${order.discount_amount > 0 ? `💸 <b>خصم:</b> ${order.discount_amount} دج
   }
 }
 
-// Google Apps Script append (Orders)
+// Google Sheets append (اختياري)
 async function sendToGoogleSheet(order) {
   const url = process.env.GOOGLE_SHEETS_WEBAPP_URL;
   const secret = process.env.GOOGLE_SHEETS_SECRET;
-  if (!url || !secret) {
-    console.warn('Google Sheets not configured. Skipping append.');
-    return { skipped: true, reason: 'not_configured' };
-  }
+  if (!url || !secret) return { skipped: true, reason: 'not_configured' };
+
   const payload = {
     secret,
     action: 'append_order',
@@ -199,6 +244,7 @@ async function sendToGoogleSheet(order) {
       lang: order.lang
     }
   };
+
   const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
   let json = {};
   try { json = await res.json(); } catch { json = { parse_error: true, status: res.status }; }
@@ -210,6 +256,7 @@ exports.handler = async (event) => {
   const startTime = Date.now();
   const origin = event.headers.origin || event.headers.Origin;
 
+  // CORS
   const corsHeaders = {
     'Access-Control-Allow-Origin': isValidOrigin(origin) ? origin : CONFIG.ALLOWED_ORIGINS[0],
     'Vary': 'Origin',
@@ -233,7 +280,6 @@ exports.handler = async (event) => {
     const lang = data.lang === 'fr' ? 'fr' : 'ar';
     const clientIP = getClientIP(event);
 
-    // بناء الطلب
     const order = {
       id: crypto.randomBytes(8).toString('hex'),
       name: sanitizeText(data.name),
@@ -276,20 +322,28 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_delivery_type }) };
     }
 
-    // Rate limit (ذري عبر Upstash Redis)
+    // Rate limit — مفتاح مركب (IP + phone_norm) بعملية ذرية
     const rl = await rlIncrement(order.client_ip, order.phone_norm, { limit: CONFIG.DAILY_LIMIT, windowMs: CONFIG.WINDOW_MS });
+
+    // هيدرز ديباغ لمعرفة المفتاح والعدّاد والـIP النهائي
+    const debugHeaders = {
+      'X-Client-IP': order.client_ip,
+      'X-Phone-Norm': order.phone_norm,
+      'X-Rate-Key': rl.key || `rate:${order.client_ip}|${order.phone_norm}`,
+      ...(Number.isFinite(rl.count) ? { 'X-Rate-Count': String(rl.count) } : {})
+    };
+
     if (!rl.ok) {
-      // إن لم يتم ضبط Upstash، نرفض بوضوح حتى يتم تهيئته (حل جذري يتطلبه)
       return {
         statusCode: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...debugHeaders, 'Content-Type': 'application/json' },
         body: JSON.stringify({ success: false, error: 'Rate limiter misconfigured', details: rl.error })
       };
     }
     if (!rl.allowed) {
       return {
         statusCode: 429,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...debugHeaders, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           success: false,
           error: 'Too many requests',
@@ -302,13 +356,13 @@ exports.handler = async (event) => {
     // Telegram
     await sendToTelegram(order);
 
-    // Append إلى Google Sheets (اختياري)
+    // Google Sheets (اختياري)
     const sheetsResult = await sendToGoogleSheet(order);
 
     const processingTime = Date.now() - startTime;
     return {
       statusCode: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Processing-Time': String(processingTime) },
+      headers: { ...corsHeaders, ...debugHeaders, 'Content-Type': 'application/json', 'X-Processing-Time': String(processingTime) },
       body: JSON.stringify({
         success: true,
         message: L(lang).success,
@@ -323,12 +377,8 @@ exports.handler = async (event) => {
     const processingTime = Date.now() - startTime;
     return {
       statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': isValidOrigin(event.headers.origin || event.headers.Origin) ? (event.headers.origin || event.headers.Origin) : CONFIG.ALLOWED_ORIGINS[0],
-        'Vary': 'Origin',
-        'Content-Type': 'application/json',
-        'X-Processing-Time': String(processingTime)
-      },
+      headers: { 'Access-Control-Allow-Origin': isValidOrigin(event.headers.origin || event.headers.Origin) ? (event.headers.origin || event.headers.Origin) : CONFIG.ALLOWED_ORIGINS[0],
+                 'Vary': 'Origin', 'Content-Type': 'application/json', 'X-Processing-Time': String(processingTime) },
       body: JSON.stringify({ success: false, error: 'Internal server error', processing_time: processingTime })
     };
   }
