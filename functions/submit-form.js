@@ -52,9 +52,9 @@ function getClientIP(event) {
   if (f) return f.split(',')[0].trim();
   return event.headers['x-nf-client-connection-ip'] || '127.0.0.1';
 }
-function sanitizeText(input, maxLength = CONFIG.MAX_SANITIZED_LENGTH) {
-  if (typeof input !== 'string') return '';
-  return input.replace(/[<>"'&]/g, '').replace(/[\x00-\x1f\x7f-\x9f]/g, '').replace(/\s+/g, ' ').trim().substring(0, maxLength);
+function sanitizeText(s, max = CONFIG.MAX_SANITIZED_LENGTH) {
+  if (typeof s !== 'string') return '';
+  return s.replace(/[<>"'&]/g,'').replace(/[\x00-\x1f\x7f-\x9f]/g,'').replace(/\s+/g,' ').trim().substring(0, max);
 }
 function normalizePhone(phone) {
   const d = String(phone || '').replace(/\D/g, '');
@@ -103,7 +103,6 @@ ${order.discount_amount > 0 ? `💸 <b>خصم:</b> ${order.discount_amount} دج
   const url = `${CONFIG.TELEGRAM_API_BASE}${botToken}/sendMessage`;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), CONFIG.TELEGRAM_TIMEOUT);
-
   try {
     let res = await fetch(url, {
       method: 'POST',
@@ -134,7 +133,7 @@ ${order.discount_amount > 0 ? `💸 <b>خصم:</b> ${order.discount_amount} دج
   }
 }
 
-// Google Apps Script calls
+// GAS helpers
 async function gasCheck(ip, phone, limit, windowMs) {
   const url = process.env.GOOGLE_SHEETS_WEBAPP_URL;
   const secret = process.env.GOOGLE_SHEETS_SECRET;
@@ -191,9 +190,7 @@ exports.handler = async (event) => {
   };
 
   try {
-    if (event.httpMethod === 'OPTIONS') {
-      return { statusCode: 200, headers: corsHeaders, body: '' };
-    }
+    if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: corsHeaders, body: '' };
     if (event.httpMethod !== 'POST') {
       return { statusCode: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Method not allowed' }) };
     }
@@ -207,7 +204,6 @@ exports.handler = async (event) => {
     const lang = data.lang === 'fr' ? 'fr' : 'ar';
     const clientIP = getClientIP(event);
 
-    // بناء الطلب
     const order = {
       id: crypto.randomBytes(8).toString('hex'),
       name: sanitizeText(data.name),
@@ -230,7 +226,7 @@ exports.handler = async (event) => {
       timestamp: Date.now()
     };
 
-    // تحقق الحقول
+    // تحقق الحقول برسائل اللغة
     if (!order.name || order.name.length < 2) {
       return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_name }) };
     }
@@ -250,7 +246,7 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_delivery_type }) };
     }
 
-    // 1) تحقق الحد: يعتمد على ثنائي (IP + phone_norm) فقط
+    // 1) فحص الحد على الثنائي (IP + phone_norm)
     const check = await gasCheck(order.client_ip, order.phone_norm, CONFIG.DAILY_LIMIT, CONFIG.DAILY_LIMIT_WINDOW);
     if (!check || check.success === false || check.allowed === false) {
       return {
@@ -271,7 +267,7 @@ exports.handler = async (event) => {
     // 3) Append إلى Sheets
     const sheetsResult = await gasAppendOrder(order);
 
-    // 4) سجل الاستهلاك فعلياً بعد النجاح
+    // 4) تسجيل الاستهلاك بعد النجاح
     await gasRecord(order.client_ip, order.phone_norm);
 
     const processingTime = Date.now() - startTime;
