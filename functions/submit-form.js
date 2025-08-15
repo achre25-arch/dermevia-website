@@ -2,8 +2,8 @@
 const crypto = require('crypto');
 
 const CONFIG = {
-  DAILY_LIMIT: 2, // طلبان خلال 24 ساعة لنفس (IP + phone_norm)
-  DAILY_LIMIT_WINDOW: 86400000,
+  DAILY_LIMIT: 2,                 // طلبان خلال 24 ساعة لنفس (IP + phone_norm)
+  WINDOW_MS: 86400000,            // 24 ساعة
   TELEGRAM_API_BASE: 'https://api.telegram.org/bot',
   TELEGRAM_TIMEOUT: 15000,
   ALLOWED_ORIGINS: [
@@ -15,6 +15,7 @@ const CONFIG = {
   MAX_SANITIZED_LENGTH: 250
 };
 
+// i18n
 const I18N = {
   ar: {
     success: 'تم إرسال طلبك بنجاح.',
@@ -39,12 +40,17 @@ const I18N = {
 };
 const L = (lang) => (I18N[lang] || I18N.ar);
 
+// Utilities
 function isValidOrigin(origin) {
   if (!origin) return false;
   if (CONFIG.ALLOWED_ORIGINS.includes(origin)) return true;
   try {
     const u = new URL(origin);
-    return u.protocol === 'https:' && (u.hostname.endsWith('.netlify.app') || u.hostname === 'zenabiodz.com' || u.hostname === 'www.zenabiodz.com');
+    return u.protocol === 'https:' && (
+      u.hostname.endsWith('.netlify.app') ||
+      u.hostname === 'zenabiodz.com' ||
+      u.hostname === 'www.zenabiodz.com'
+    );
   } catch { return false; }
 }
 function getClientIP(event) {
@@ -69,10 +75,37 @@ function normalizePhone(phone) {
 function validatePhoneNormalized(pn) {
   return /^(05|06|07)\d{8}$/.test(pn);
 }
-
 const escapeHTML = (t = '') =>
   String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
+// Redis (Upstash) rate limit: atomic INCR + set TTL only on first hit
+async function rlIncrement(ip, phoneNorm, { limit = CONFIG.DAILY_LIMIT, windowMs = CONFIG.WINDOW_MS } = {}) {
+  const base = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!base || !token) {
+    return { ok: false, error: 'rate_limit_not_configured' };
+  }
+  const key = `rate:${ip}|${phoneNorm}`;
+  const headers = { Authorization: `Bearer ${token}` };
+
+  // 1) INCR
+  const r1 = await fetch(`${base}/incr/${encodeURIComponent(key)}`, { headers });
+  if (!r1.ok) {
+    const txt = await r1.text().catch(()=>'');
+    return { ok: false, error: `redis_incr_failed: ${r1.status} ${txt}` };
+  }
+  const j1 = await r1.json().catch(()=> ({}));
+  const count = typeof j1.result === 'number' ? j1.result : Number(j1);
+
+  // 2) إذا كانت أول مرة، ضع TTL = 24 ساعة
+  if (count === 1) {
+    await fetch(`${base}/pexpire/${encodeURIComponent(key)}/${windowMs}`, { headers }).catch(()=>{});
+  }
+
+  return { ok: true, allowed: count <= limit, count, limit };
+}
+
+// Telegram
 async function sendToTelegram(order) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -103,6 +136,7 @@ ${order.discount_amount > 0 ? `💸 <b>خصم:</b> ${order.discount_amount} دج
   const url = `${CONFIG.TELEGRAM_API_BASE}${botToken}/sendMessage`;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), CONFIG.TELEGRAM_TIMEOUT);
+
   try {
     let res = await fetch(url, {
       method: 'POST',
@@ -133,41 +167,36 @@ ${order.discount_amount > 0 ? `💸 <b>خصم:</b> ${order.discount_amount} دج
   }
 }
 
-// GAS helpers
-async function gasCheck(ip, phone, limit, windowMs) {
+// Google Apps Script append (Orders)
+async function sendToGoogleSheet(order) {
   const url = process.env.GOOGLE_SHEETS_WEBAPP_URL;
   const secret = process.env.GOOGLE_SHEETS_SECRET;
-  if (!url || !secret) throw new Error('GAS not configured');
-  const payload = { secret, action: 'check', ip, phone, limit, windowMs };
-  const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-  let json = {};
-  try { json = await res.json(); } catch { json = { parse_error: true, status: res.status }; }
-  return json;
-}
-async function gasRecord(ip, phone) {
-  const url = process.env.GOOGLE_SHEETS_WEBAPP_URL;
-  const secret = process.env.GOOGLE_SHEETS_SECRET;
-  if (!url || !secret) throw new Error('GAS not configured');
-  const payload = { secret, action: 'record', ip, phone };
-  const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-  let json = {};
-  try { json = await res.json(); } catch { json = { parse_error: true, status: res.status }; }
-  return json;
-}
-async function gasAppendOrder(order) {
-  const url = process.env.GOOGLE_SHEETS_WEBAPP_URL;
-  const secret = process.env.GOOGLE_SHEETS_SECRET;
-  if (!url || !secret) return { skipped: true, reason: 'not_configured' };
+  if (!url || !secret) {
+    console.warn('Google Sheets not configured. Skipping append.');
+    return { skipped: true, reason: 'not_configured' };
+  }
   const payload = {
     secret,
     action: 'append_order',
     data: {
-      timestamp: order.timestamp, id: order.id, name: order.name, phone: order.phone,
-      wilaya: order.wilaya, commune: order.commune, delivery_type: order.delivery_type,
-      product: order.product, quantity: order.quantity, product_price: order.product_price,
-      final_price: order.final_price, subtotal_price: order.subtotal_price, delivery_price: order.delivery_price,
-      total_price: order.total_price, discount_amount: order.discount_amount, discount_percentage: order.discount_percentage,
-      client_ip: order.client_ip, lang: order.lang
+      timestamp: order.timestamp,
+      id: order.id,
+      name: order.name,
+      phone: order.phone,
+      wilaya: order.wilaya,
+      commune: order.commune,
+      delivery_type: order.delivery_type,
+      product: order.product,
+      quantity: order.quantity,
+      product_price: order.product_price,
+      final_price: order.final_price,
+      subtotal_price: order.subtotal_price,
+      delivery_price: order.delivery_price,
+      total_price: order.total_price,
+      discount_amount: order.discount_amount,
+      discount_percentage: order.discount_percentage,
+      client_ip: order.client_ip,
+      lang: order.lang
     }
   };
   const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
@@ -182,7 +211,7 @@ exports.handler = async (event) => {
   const origin = event.headers.origin || event.headers.Origin;
 
   const corsHeaders = {
-    'Access-Control-Allow-Origin': isValidOrigin(origin) ? origin : (origin || CONFIG.ALLOWED_ORIGINS[0]),
+    'Access-Control-Allow-Origin': isValidOrigin(origin) ? origin : CONFIG.ALLOWED_ORIGINS[0],
     'Vary': 'Origin',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Requested-With',
@@ -204,6 +233,7 @@ exports.handler = async (event) => {
     const lang = data.lang === 'fr' ? 'fr' : 'ar';
     const clientIP = getClientIP(event);
 
+    // بناء الطلب
     const order = {
       id: crypto.randomBytes(8).toString('hex'),
       name: sanitizeText(data.name),
@@ -246,9 +276,17 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_delivery_type }) };
     }
 
-    // 1) فحص الحد على الثنائي (IP + phone_norm)
-    const check = await gasCheck(order.client_ip, order.phone_norm, CONFIG.DAILY_LIMIT, CONFIG.DAILY_LIMIT_WINDOW);
-    if (!check || check.success === false || check.allowed === false) {
+    // Rate limit (ذري عبر Upstash Redis)
+    const rl = await rlIncrement(order.client_ip, order.phone_norm, { limit: CONFIG.DAILY_LIMIT, windowMs: CONFIG.WINDOW_MS });
+    if (!rl.ok) {
+      // إن لم يتم ضبط Upstash، نرفض بوضوح حتى يتم تهيئته (حل جذري يتطلبه)
+      return {
+        statusCode: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ success: false, error: 'Rate limiter misconfigured', details: rl.error })
+      };
+    }
+    if (!rl.allowed) {
       return {
         statusCode: 429,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -256,19 +294,16 @@ exports.handler = async (event) => {
           success: false,
           error: 'Too many requests',
           message: L(lang).rate_limit_exceeded,
-          limit_info: check && check.success ? { limit: check.limit, remaining: 0, reset_in_ms: check.resetInMs } : undefined
+          limit_info: { limit: rl.limit, count: rl.count }
         })
       };
     }
 
-    // 2) Telegram
+    // Telegram
     await sendToTelegram(order);
 
-    // 3) Append إلى Sheets
-    const sheetsResult = await gasAppendOrder(order);
-
-    // 4) تسجيل الاستهلاك بعد النجاح
-    await gasRecord(order.client_ip, order.phone_norm);
+    // Append إلى Google Sheets (اختياري)
+    const sheetsResult = await sendToGoogleSheet(order);
 
     const processingTime = Date.now() - startTime;
     return {
@@ -289,7 +324,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 500,
       headers: {
-        'Access-Control-Allow-Origin': isValidOrigin(event.headers.origin || event.headers.Origin) ? (event.headers.origin || event.headers.Origin) : (event.headers.origin || event.headers.Origin || CONFIG.ALLOWED_ORIGINS[0]),
+        'Access-Control-Allow-Origin': isValidOrigin(event.headers.origin || event.headers.Origin) ? (event.headers.origin || event.headers.Origin) : CONFIG.ALLOWED_ORIGINS[0],
         'Vary': 'Origin',
         'Content-Type': 'application/json',
         'X-Processing-Time': String(processingTime)
