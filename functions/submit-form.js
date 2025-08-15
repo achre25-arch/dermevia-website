@@ -9,7 +9,7 @@ const crypto = require('crypto');
 
 const CONFIG = {
   MAX_REQUESTS_PER_HOUR: 5,
-  MAX_REQUESTS_PER_DAY: 10,
+  MAX_REQUESTS_PER_DAY: 2, // الحد اليومي المطلوب (طلبان)
   RATE_LIMIT_WINDOW: 3600000,
   DAILY_LIMIT_WINDOW: 86400000,
 
@@ -25,9 +25,36 @@ const CONFIG = {
   MAX_SANITIZED_LENGTH: 250
 };
 
+// i18n messages
+const I18N = {
+  ar: {
+    success: 'تم إرسال طلبك بنجاح.',
+    rate_limit_exceeded: 'عذراً، لقد وصلت إلى الحد اليومي لعدد الطلبات. يُسمح بطلبين فقط خلال 24 ساعة لنفس رقم الهاتف وعنوان IP.',
+    invalid_name: 'الاسم غير صالح.',
+    invalid_phone: 'رقم الهاتف غير صالح (10 أرقام ويبدأ بـ 05 أو 06 أو 07).',
+    invalid_wilaya: 'الولاية غير صالحة.',
+    invalid_commune: 'البلدية غير صالحة.',
+    invalid_product: 'اسم المنتج غير صالح.',
+    invalid_delivery_type: 'نوع التوصيل غير صالح.'
+  },
+  fr: {
+    success: 'Votre commande a été envoyée avec succès.',
+    rate_limit_exceeded: 'Désolé, vous avez atteint la limite quotidienne. Deux commandes sont autorisées en 24h pour le même numéro et la même adresse IP.',
+    invalid_name: 'Nom invalide.',
+    invalid_phone: 'Numéro de téléphone invalide (10 chiffres, commence par 05/06/07).',
+    invalid_wilaya: 'Wilaya invalide.',
+    invalid_commune: 'Commune invalide.',
+    invalid_product: 'Produit invalide.',
+    invalid_delivery_type: 'Type de livraison invalide.'
+  }
+};
+const L = (lang) => (I18N[lang] || I18N.ar);
+
+// تخزين غير دائم (fallback فقط)
 const orderStore = new Map();
 const rateStore = new Map();
 
+// Utilities
 function sanitizeInput(input, maxLength = CONFIG.MAX_SANITIZED_LENGTH) {
   if (typeof input !== 'string') return '';
   return input
@@ -62,17 +89,17 @@ function getClientIP(event) {
   return event.headers['x-nf-client-connection-ip'] || '127.0.0.1';
 }
 
-function checkRateLimit(identifier) {
+// Fallback rate limit (غير دائم)
+function checkRateLimitMemory(identifier) {
   const now = Date.now();
   const userRequests = rateStore.get(identifier) || [];
   const validRequests = userRequests.filter(ts => (now - ts) < CONFIG.DAILY_LIMIT_WINDOW);
   const hourlyRequests = validRequests.filter(ts => (now - ts) < CONFIG.RATE_LIMIT_WINDOW);
   if (hourlyRequests.length >= CONFIG.MAX_REQUESTS_PER_HOUR) return { allowed: false, reason: 'hourly_limit' };
   if (validRequests.length >= CONFIG.MAX_REQUESTS_PER_DAY) return { allowed: false, reason: 'daily_limit' };
-  return { allowed: true };
+  return { allowed: true, count: validRequests.length };
 }
-
-function recordRequest(identifier) {
+function recordRequestMemory(identifier) {
   const now = Date.now();
   const userRequests = rateStore.get(identifier) || [];
   userRequests.push(now);
@@ -80,6 +107,7 @@ function recordRequest(identifier) {
   rateStore.set(identifier, validRequests);
 }
 
+// Telegram
 const escapeHTML = (t = '') =>
   String(t)
     .replace(/&/g, '&amp;')
@@ -91,11 +119,9 @@ const escapeHTML = (t = '') =>
 async function sendToTelegram(order) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!botToken || !chatId) throw new Error('Telegram credentials (BOT_TOKEN or CHAT_ID) are not configured in environment variables.');
 
-  if (!botToken || !chatId) {
-    throw new Error('Telegram credentials (BOT_TOKEN or CHAT_ID) are not configured in environment variables.');
-  }
-
+  // ملاحظة: رسالة تيليغرام تبقى بالعربية. إذا أردت نسخة فرنسية أيضاً، أخبرني لأضبطها حسب order.lang.
   const message =
 `🔥 <b>طلب جديد - Dermevia Pureskin</b>
 
@@ -127,12 +153,7 @@ ${order.discount_amount > 0 ? `💸 <b>خصم:</b> ${order.discount_amount} دج
     let response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: message,
-        parse_mode: 'HTML',
-        disable_web_page_preview: true
-      }),
+      body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML', disable_web_page_preview: true }),
       signal: controller.signal
     });
 
@@ -142,11 +163,7 @@ ${order.discount_amount > 0 ? `💸 <b>خصم:</b> ${order.discount_amount} دج
         const retry = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: message,
-            disable_web_page_preview: true
-          })
+          body: JSON.stringify({ chat_id: chatId, text: message, disable_web_page_preview: true })
         });
         clearTimeout(timeoutId);
         if (!retry.ok) throw new Error(`Telegram retry failed: ${retry.status} - ${await retry.text()}`);
@@ -164,10 +181,10 @@ ${order.discount_amount > 0 ? `💸 <b>خصم:</b> ${order.discount_amount} دج
   }
 }
 
+// Google Sheets (append order)
 async function sendToGoogleSheet(order) {
   const url = process.env.GOOGLE_SHEETS_WEBAPP_URL;
   const secret = process.env.GOOGLE_SHEETS_SECRET;
-
   if (!url || !secret) {
     console.warn('Google Sheets not configured (missing GOOGLE_SHEETS_WEBAPP_URL or GOOGLE_SHEETS_SECRET). Skipping.');
     return { skipped: true, reason: 'not_configured' };
@@ -178,6 +195,7 @@ async function sendToGoogleSheet(order) {
 
   const payload = {
     secret,
+    action: 'append_order',
     data: {
       timestamp: order.timestamp,
       id: order.id,
@@ -210,20 +228,42 @@ async function sendToGoogleSheet(order) {
     clearTimeout(timeout);
 
     let json = {};
-    try { json = await res.json(); } catch (e) {
-      json = { parse_error: true, status: res.status };
-    }
+    try { json = await res.json(); } catch { json = { parse_error: true, status: res.status }; }
 
     if (!json || json.success !== true) {
       const msg = `Google Sheets append failed: status=${res.status}, body=${JSON.stringify(json)}`;
       console.error(msg);
       return { success: false, status: res.status, body: json };
     }
-
     return { success: true };
   } catch (err) {
     clearTimeout(timeout);
     console.error('Google Sheets error:', err);
+    return { success: false, error: String(err) };
+  }
+}
+
+// Persistent rate-limit via GAS (daily limit = 2 for IP+Phone)
+async function checkAndRecordDailyLimit(ip, phone) {
+  const url = process.env.GOOGLE_SHEETS_WEBAPP_URL;
+  const secret = process.env.GOOGLE_SHEETS_SECRET;
+  if (!url || !secret) {
+    console.warn('Daily limit via GAS not configured. Falling back to in-memory.');
+    return null; // سيُستخدم fallback
+  }
+
+  try {
+    const payload = { secret, action: 'check_and_record', ip, phone, limit: 2, windowMs: CONFIG.DAILY_LIMIT_WINDOW };
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    let json = {};
+    try { json = await res.json(); } catch { json = { parse_error: true, status: res.status }; }
+    return json;
+  } catch (err) {
+    console.error('GAS rate-limit error:', err);
     return { success: false, error: String(err) };
   }
 }
@@ -244,30 +284,23 @@ exports.handler = async (event) => {
     if (event.httpMethod === 'OPTIONS') {
       return { statusCode: 200, headers: corsHeaders, body: '' };
     }
-
     if (event.httpMethod !== 'POST') {
-      return {
-        statusCode: 405,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ success: false, error: 'Method not allowed' })
-      };
+      return { statusCode: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Method not allowed' }) };
     }
 
     let data;
-    try {
-      data = JSON.parse(event.body || '{}');
-    } catch {
-      return {
-        statusCode: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ success: false, error: 'Invalid JSON body' })
-      };
+    try { data = JSON.parse(event.body || '{}'); }
+    catch {
+      // لا نعرف لغة المستخدم هنا بشكل مؤكد، نكتفي برسالة ثابتة
+      return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid JSON body' }) };
     }
 
     const clientIP = getClientIP(event);
 
     const orderId = crypto.randomBytes(8).toString('hex');
     const orderTimestamp = Date.now();
+
+    const lang = data.lang === 'fr' ? 'fr' : 'ar';
 
     const order = {
       id: orderId,
@@ -285,45 +318,68 @@ exports.handler = async (event) => {
       total_price: parseInt(data.total_price) || 0,
       discount_amount: parseInt(data.discount_amount) || 0,
       discount_percentage: parseInt(data.discount_percentage) || 0,
-      lang: data.lang === 'fr' ? 'fr' : 'ar',
+      lang,
       client_ip: clientIP,
       timestamp: orderTimestamp
     };
 
+    // Validation (localized)
     if (!order.name || order.name.length < 2) {
-      return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid name' }) };
+      return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_name }) };
     }
     if (!validatePhone(order.phone)) {
-      return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid phone number' }) };
+      return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_phone }) };
     }
     if (!order.wilaya || order.wilaya.length < 2) {
-      return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid wilaya' }) };
+      return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_wilaya }) };
     }
     if (!order.commune || order.commune.length < 2) {
-      return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid commune' }) };
+      return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_commune }) };
     }
     if (!order.product || order.product.length < 2) {
-      return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid product' }) };
+      return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_product }) };
     }
     if (!['home', 'office'].includes(order.delivery_type)) {
-      return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid delivery type' }) };
+      return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: L(lang).invalid_delivery_type }) };
     }
 
-    const rateLimitId = crypto.createHash('sha256').update(`${clientIP}:${order.phone}`).digest('hex').substring(0, 16);
-    const rateLimitCheck = checkRateLimit(rateLimitId);
-    if (!rateLimitCheck.allowed) {
-      return {
-        statusCode: 429,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ success: false, error: 'Too many requests', reason: rateLimitCheck.reason })
-      };
+    // 1) Persistent daily limit via GAS: IP + Phone, 2 per 24h
+    const gasLimit = await checkAndRecordDailyLimit(order.client_ip, order.phone);
+    if (gasLimit && gasLimit.success !== false) {
+      if (gasLimit.allowed === false) {
+        return {
+          statusCode: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            success: false,
+            error: 'Too many requests',
+            message: L(lang).rate_limit_exceeded,
+            limit_info: { limit: 2, remaining: 0, reset_in_ms: gasLimit.resetInMs || undefined }
+          })
+        };
+      }
+    } else {
+      // 2) Fallback in-memory (غير دائم)
+      const rateLimitId = crypto.createHash('sha256').update(`${order.client_ip}:${order.phone}`).digest('hex').substring(0, 16);
+      const memCheck = checkRateLimitMemory(rateLimitId);
+      if (!memCheck.allowed) {
+        return {
+          statusCode: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            success: false,
+            error: 'Too many requests',
+            message: L(lang).rate_limit_exceeded,
+            reason: memCheck.reason
+          })
+        };
+      }
+      recordRequestMemory(rateLimitId);
     }
 
+    // Proceed: Telegram then Google Sheets
     await sendToTelegram(order);
     const sheetsResult = await sendToGoogleSheet(order);
-
-    recordRequest(rateLimitId);
-    orderStore.set(order.id, { ...order, processed_at: Date.now() });
 
     const processingTime = Date.now() - startTime;
     return {
@@ -332,9 +388,9 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         success: true,
         order_id: order.id,
-        message: 'Order submitted successfully',
+        message: L(lang).success,
         processing_time: processingTime,
-        sheets_result: sheetsResult // مهم للتشخيص
+        sheets_result: sheetsResult
       })
     };
 
