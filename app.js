@@ -79,7 +79,7 @@ const i18n = {
     deliveryCostLabel: "تكلفة التوصيل",
     invoiceTotalLabel: "إجمالي الفاتورة",
     afterDiscountLabel: "بعد الخصم",
-    // Footer
+    // Footer (كما في ملفك)
     footerTagline: "علم العناية بالبشرة الأوروبي المتقدم",
     footerContactTitle: "📞 مصلحة الزبائن",
     footerContactPhone: "+213 770 45 32 10 / +213 555 123 456",
@@ -157,7 +157,7 @@ const i18n = {
     deliveryCostLabel: "Frais de livraison",
     invoiceTotalLabel: "Total de la facture",
     afterDiscountLabel: "Après remise",
-    // Footer
+    // Footer (كما في ملفك)
     footerTagline: "Science européenne avancée des soins cutanés",
     footerContactTitle: "📞 Service Client",
     footerContactPhone: "+213 770 45 32 10 / +213 555 123 456",
@@ -189,59 +189,83 @@ const TESTIMONIALS = {
   ar: [
     {
       platform: "📘",
-      avatar: "https://picsum.photos/seed/Amina/80", // Placeholder for Amina Ben Ali
       name: "أمينة بن علي",
       location: "الجزائر العاصمة",
       rating: 5,
       text: "والله المنتج هايل! من أول أسبوع لاحظت نقص واضح في اللمعان والحبوب بدات تجف. ريحته خفيفة وما ينشفش البشرة.",
-      time: "منذ 3 أيام"
+      time: "منذ 3 أيام",
+      avatars: [
+        "https://i.pravatar.cc/120?u=amina.benali.algiers",
+        "https://randomuser.me/api/portraits/women/68.jpg",
+        "https://api.dicebear.com/7.x/adventurer/png?seed=Amina%20Benali&backgroundColor=b6e3f4&radius=50"
+      ]
     },
     {
       platform: "📷",
-      avatar: "https://picsum.photos/seed/Sarah/80", // Placeholder for Sarah Alioui
       name: "سارة عليوي",
       location: "وهران",
       rating: 5,
       text: "استعملتو صباح ومساء، نتيجته واضحة خاصة على الرؤوس السوداء. التوصيل كان سريع وخدمة العملاء محترمة.",
-      time: "منذ أسبوع"
+      time: "منذ أسبوع",
+      avatars: [
+        "https://i.pravatar.cc/120?u=sarah.aloui.oran",
+        "https://randomuser.me/api/portraits/women/44.jpg",
+        "https://api.dicebear.com/7.x/adventurer/png?seed=Sarah%20Aloui&backgroundColor=c0aede&radius=50"
+      ]
     },
     {
       platform: "📘",
-      avatar: "https://picsum.photos/seed/Nour/80", // Placeholder for Nour El Houda Kamal
       name: "نور الهدى كمال",
       location: "قسنطينة",
       rating: 5,
       text: "حسيت بالفرق في نعومة البشرة خلال أيام. ينظف بعمق بدون ما يسبب جفاف. أنصح به للبشرة الدهنية.",
-      time: "منذ 5 أيام"
+      time: "منذ 5 أيام",
+      avatars: [
+        "https://i.pravatar.cc/120?u=nourelhoda.kamal.constantine",
+        "https://randomuser.me/api/portraits/women/65.jpg",
+        "https://api.dicebear.com/7.x/adventurer/png?seed=Nour%20Elhoda%20Kamal&backgroundColor=ffd5dc&radius=50"
+      ]
     }
   ],
   fr: [
     {
       platform: "📘",
-      avatar: "https://picsum.photos/seed/Leila/80", // Placeholder for Leila Boudjemaa
       name: "Leila Boudjemaa",
       location: "Alger",
       rating: 5,
       text: "Produit excellent ! Ma peau est moins grasse et les boutons sèchent rapidement. Odeur légère et agréable.",
-      time: "Il y a 2 jours"
+      time: "Il y a 2 jours",
+      avatars: [
+        "https://i.pravatar.cc/120?u=leila.boudjemaa.alger",
+        "https://randomuser.me/api/portraits/women/12.jpg",
+        "https://api.dicebear.com/7.x/adventurer/png?seed=Leila%20Boudjemaa&backgroundColor=b6e3f4&radius=50"
+      ]
     },
     {
       platform: "📷",
-      avatar: "https://picsum.photos/seed/Fatima/80", // Placeholder for Fatima Rezki
       name: "Fatima Rezki",
       location: "Oran",
       rating: 5,
       text: "Enfin un nettoyant efficace pour peau grasse. Les points noirs ont diminué et ma peau est plus lisse.",
-      time: "Il y a 1 semaine"
+      time: "Il y a 1 semaine",
+      avatars: [
+        "https://i.pravatar.cc/120?u=fatima.rezki.oran",
+        "https://randomuser.me/api/portraits/women/22.jpg",
+        "https://api.dicebear.com/7.x/adventurer/png?seed=Fatima%20Rezki&backgroundColor=c0aede&radius=50"
+      ]
     },
     {
       platform: "📘",
-      avatar: "https://picsum.photos/seed/Khadija/80", // Placeholder for Khadija Mansouri
       name: "Khadija Mansouri",
       location: "Constantine",
       rating: 5,
       text: "Très satisfaite. Nettoie en profondeur sans assécher. Je recommande pour les peaux mixtes à grasses.",
-      time: "Il y a 4 jours"
+      time: "Il y a 4 jours",
+      avatars: [
+        "https://i.pravatar.cc/120?u=khadija.mansouri.constantine",
+        "https://randomuser.me/api/portraits/women/47.jpg",
+        "https://api.dicebear.com/7.x/adventurer/png?seed=Khadija%20Mansouri&backgroundColor=ffd5dc&radius=50"
+      ]
     }
   ]
 };
@@ -604,21 +628,34 @@ function renderTestimonials(lang) {
   if (!grid) return;
   const data = TESTIMONIALS[lang] || [];
   const makeStars = n => '⭐'.repeat(Math.max(0, Math.min(5, Math.round(n || 5))));
-  grid.innerHTML = data.map(t => `
-    <div class="testimonial-card">
-      <div class="social-platform">${t.platform}</div>
-      <div class="testimonial-header">
-        <img src="${t.avatar}" alt="${t.name}" class="testimonial-avatar-img" onerror="this.style.display='none';">
-        <div class="testimonial-user-info">
-          <h4>${t.name}</h4>
-          <div class="testimonial-location">${t.location}</div>
+
+  grid.innerHTML = data.map((t, idx) => {
+    const srcset = encodeURIComponent(JSON.stringify(t.avatars || []));
+    const first = (t.avatars && t.avatars[0]) || '';
+    return `
+      <div class="testimonial-card">
+        <div class="social-platform">${t.platform || ''}</div>
+        <div class="testimonial-header">
+          <img
+            src="${first}"
+            class="testimonial-avatar-img"
+            alt="${t.name}"
+            referrerpolicy="no-referrer"
+            data-srcset="${srcset}"
+            data-idx="0"
+            onerror="window.__avatarFallback && window.__avatarFallback(this)"
+          >
+          <div class="testimonial-user-info">
+            <h4>${t.name}</h4>
+            <div class="testimonial-location">${t.location || ''}</div>
+          </div>
         </div>
+        <div class="testimonial-rating">${makeStars(t.rating)}</div>
+        <p class="testimonial-text">${t.text}</p>
+        <div class="testimonial-time">${t.time || ''}</div>
       </div>
-      <div class="testimonial-rating">${makeStars(t.rating)}</div>
-      <p class="testimonial-text">${t.text}</p>
-      <div class="testimonial-time">${t.time}</div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 // =========== ORDER HANDLER ===========
@@ -648,7 +685,9 @@ async function handleOrderSubmissionSecure(e) {
     const wilayaSelect = document.getElementById('wilaya');
     const wilayaOption = wilayaSelect.options[wilayaSelect.selectedIndex];
     const deliveryType = document.getElementById('delivery_type').value;
-    const deliveryPrice = (deliveryType === 'home') ? parseInt(wilayaOption.dataset.homePrice) || 0 : parseInt(wilayaOption.dataset.officePrice) || 0;
+    const deliveryPrice = (deliveryType === 'home') 
+      ? parseInt(wilayaOption.dataset.homePrice) || 0
+      : parseInt(wilayaOption.dataset.officePrice) || 0;
     const subtotalPrice = finalPrice * quantity;
     const totalPrice = subtotalPrice + deliveryPrice;
     const discountAmount = quantity >= 2 ? (originalPrice * quantity - subtotalPrice) : 0;
@@ -813,7 +852,6 @@ function updateQuantity(newQuantity) {
   updatePriceDisplay();
   updateFloatingCTA();
 }
-
 function updateHeaderPrice() {
   const t = i18n[getLang()];
   const originalPrice = parseInt(document.getElementById('productPrice').value) || 0;
@@ -834,7 +872,6 @@ function updateHeaderPrice() {
     priceOnlyPill.textContent = `${t.unitPriceLabel}: ${formatCurrency(originalPrice)}`;
   }
 }
-
 function updatePriceDisplay() {
   const t = i18n[getLang()];
   const originalPrice = parseInt(document.getElementById('productPrice').value) || 0;
@@ -843,18 +880,15 @@ function updatePriceDisplay() {
   const deliveryType = document.getElementById('delivery_type').value;
   const priceDisplay = document.getElementById('priceDisplay');
   if (!priceDisplay || !wilayaSelect) return;
-
   let deliveryPrice = null;
   if (wilayaSelect.selectedIndex > 0 && deliveryType) {
     const option = wilayaSelect.options[wilayaSelect.selectedIndex];
     deliveryPrice = (deliveryType === 'home') ? parseInt(option.dataset.homePrice) || 0 : parseInt(option.dataset.officePrice) || 0;
   }
-
   if (deliveryPrice !== null) {
     const finalPrice = calculateDiscountedPrice(originalPrice, quantity);
     const subtotalPrice = finalPrice * quantity;
     const totalPrice = subtotalPrice + deliveryPrice;
-
     let html = '';
     if (quantity >= 2) {
       const originalSubtotal = originalPrice * quantity;
@@ -864,11 +898,8 @@ function updatePriceDisplay() {
     }
     priceDisplay.innerHTML = html;
     priceDisplay.style.display = 'block';
-  } else {
-    priceDisplay.style.display = 'none';
-  }
+  } else { priceDisplay.style.display = 'none'; }
 }
-
 function updateFinalPriceAmount() {
   const el = document.getElementById('finalPriceAmount');
   const price = parseInt(document.getElementById('productPrice')?.value || '0') || 0;
@@ -948,8 +979,13 @@ function switchLanguage(lang) {
   };
   Object.entries(footerElements).forEach(([id, val]) => { const el = document.getElementById(id); if (el && val) el.textContent = val; });
 
+  // تحديث كل عناصر data-*
   translateByDataAttrs(lang);
+
+  // إعادة توليد التقييمات بالكامل حسب اللغة
   renderTestimonials(lang);
+
+  // تحديث بقية الأجزاء
   updateSlideshowForLanguage(lang);
   updateHeaderPrice();
   updatePriceDisplay();
@@ -981,30 +1017,36 @@ document.addEventListener('DOMContentLoaded', async function() {
   if ('IntersectionObserver' in window) lazyLoadImages();
   initSlideshow();
 
+  // أزرار CTA
   const ctaButton = document.getElementById('ctaButton');
   if (ctaButton) ctaButton.addEventListener('click', (e) => { e.preventDefault(); showOrderForm(); });
   const floatingCTABtn = document.getElementById('floatingCTABtn');
   if (floatingCTABtn) floatingCTABtn.addEventListener('click', (e) => { e.preventDefault(); showOrderForm(); });
 
+  // تبديل اللغة
   const arBtn = document.getElementById('ar-btn');
   const frBtn = document.getElementById('fr-btn');
   if (arBtn) arBtn.addEventListener('click', () => switchLanguage('ar'));
   if (frBtn) frBtn.addEventListener('click', () => switchLanguage('fr'));
 
+  // كمية القطع
   const decreaseBtn = document.getElementById('headerDecreaseBtn');
   const increaseBtn = document.getElementById('headerIncreaseBtn');
   if (decreaseBtn) decreaseBtn.addEventListener('click', () => { const q = parseInt(document.getElementById('quantity').value) || 1; updateQuantity(q - 1); });
   if (increaseBtn) increaseBtn.addEventListener('click', () => { const q = parseInt(document.getElementById('quantity').value) || 1; updateQuantity(q + 1); });
 
+  // الولاية/نوع التوصيل
   const wilayaSelect = document.getElementById('wilaya');
   const deliveryTypeSelect = document.getElementById('delivery_type');
   if (wilayaSelect) wilayaSelect.addEventListener('change', (e) => { populateCommunes(e.target.value); updatePriceDisplay(); });
   if (deliveryTypeSelect) deliveryTypeSelect.addEventListener('change', updatePriceDisplay);
 
+  // إظهار/إخفاء CTA العائم
   const debouncedScrollHandler = debounce(() => { toggleFloatingCTA(); }, 16);
   window.addEventListener('scroll', debouncedScrollHandler, { passive: true });
   window.addEventListener('resize', toggleFloatingCTA);
 
+  // فحص رقم الهاتف لحظيًا
   const phoneInput = document.getElementById('phone');
   if (phoneInput) {
     phoneInput.addEventListener('input', function() {
@@ -1053,7 +1095,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   }
 
-  console.log('✅ Dermevia Secure App Loaded (testimonials rendered dynamically)');
+  console.log('✅ Dermevia Secure App Loaded (testimonials rendered by language)');
 });
 
 // =========== HELPERS ===========
@@ -1089,4 +1131,4 @@ window.closeModal = closeModal;
 window.modalPrev = modalPrev;
 window.modalNext = modalNext;
 
-console.log('🔧 Dermevia App - Dynamic testimonials with realistic avatars');
+console.log('🔧 Dermevia App - i18n + testimonials dynamic');
