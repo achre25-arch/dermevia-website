@@ -7,12 +7,11 @@
 
 const crypto = require('crypto');
 
-// Configuration
 const CONFIG = {
   MAX_REQUESTS_PER_HOUR: 5,
   MAX_REQUESTS_PER_DAY: 10,
-  RATE_LIMIT_WINDOW: 3600000, // 1 hour
-  DAILY_LIMIT_WINDOW: 86400000, // 24 hours
+  RATE_LIMIT_WINDOW: 3600000,
+  DAILY_LIMIT_WINDOW: 86400000,
 
   TELEGRAM_API_BASE: 'https://api.telegram.org/bot',
   TELEGRAM_TIMEOUT: 15000,
@@ -26,11 +25,9 @@ const CONFIG = {
   MAX_SANITIZED_LENGTH: 250
 };
 
-// ملاحظة: التخزين التالي غير دائم في Netlify
 const orderStore = new Map();
 const rateStore = new Map();
 
-// Utilities
 function sanitizeInput(input, maxLength = CONFIG.MAX_SANITIZED_LENGTH) {
   if (typeof input !== 'string') return '';
   return input
@@ -65,7 +62,6 @@ function getClientIP(event) {
   return event.headers['x-nf-client-connection-ip'] || '127.0.0.1';
 }
 
-// Rate limit (غير دائم)
 function checkRateLimit(identifier) {
   const now = Date.now();
   const userRequests = rateStore.get(identifier) || [];
@@ -84,7 +80,6 @@ function recordRequest(identifier) {
   rateStore.set(identifier, validRequests);
 }
 
-// Telegram helpers
 const escapeHTML = (t = '') =>
   String(t)
     .replace(/&/g, '&amp;')
@@ -93,7 +88,6 @@ const escapeHTML = (t = '') =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-// Send to Telegram using HTML (أبسط وأقل مشاكل من MarkdownV2)
 async function sendToTelegram(order) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -144,7 +138,6 @@ ${order.discount_amount > 0 ? `💸 <b>خصم:</b> ${order.discount_amount} دج
 
     if (!response.ok) {
       const errorText = await response.text();
-      // في حال خطأ تنسيق، أعد الإرسال كنص عادي بلا parse_mode
       if (response.status === 400) {
         const retry = await fetch(url, {
           method: 'POST',
@@ -153,12 +146,10 @@ ${order.discount_amount > 0 ? `💸 <b>خصم:</b> ${order.discount_amount} دج
             chat_id: chatId,
             text: message,
             disable_web_page_preview: true
-          }),
+          })
         });
         clearTimeout(timeoutId);
-        if (!retry.ok) {
-          throw new Error(`Telegram retry failed: ${retry.status} - ${await retry.text()}`);
-        }
+        if (!retry.ok) throw new Error(`Telegram retry failed: ${retry.status} - ${await retry.text()}`);
         return await retry.json();
       }
       throw new Error(`Telegram API error: ${response.status} - ${errorText}`);
@@ -173,7 +164,70 @@ ${order.discount_amount > 0 ? `💸 <b>خصم:</b> ${order.discount_amount} دج
   }
 }
 
-// Main handler
+async function sendToGoogleSheet(order) {
+  const url = process.env.GOOGLE_SHEETS_WEBAPP_URL;
+  const secret = process.env.GOOGLE_SHEETS_SECRET;
+
+  if (!url || !secret) {
+    console.warn('Google Sheets not configured (missing GOOGLE_SHEETS_WEBAPP_URL or GOOGLE_SHEETS_SECRET). Skipping.');
+    return { skipped: true, reason: 'not_configured' };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+
+  const payload = {
+    secret,
+    data: {
+      timestamp: order.timestamp,
+      id: order.id,
+      name: order.name,
+      phone: order.phone,
+      wilaya: order.wilaya,
+      commune: order.commune,
+      delivery_type: order.delivery_type,
+      product: order.product,
+      quantity: order.quantity,
+      product_price: order.product_price,
+      final_price: order.final_price,
+      subtotal_price: order.subtotal_price,
+      delivery_price: order.delivery_price,
+      total_price: order.total_price,
+      discount_amount: order.discount_amount,
+      discount_percentage: order.discount_percentage,
+      client_ip: order.client_ip,
+      lang: order.lang
+    }
+  };
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    let json = {};
+    try { json = await res.json(); } catch (e) {
+      json = { parse_error: true, status: res.status };
+    }
+
+    if (!json || json.success !== true) {
+      const msg = `Google Sheets append failed: status=${res.status}, body=${JSON.stringify(json)}`;
+      console.error(msg);
+      return { success: false, status: res.status, body: json };
+    }
+
+    return { success: true };
+  } catch (err) {
+    clearTimeout(timeout);
+    console.error('Google Sheets error:', err);
+    return { success: false, error: String(err) };
+  }
+}
+
 exports.handler = async (event) => {
   const startTime = Date.now();
   const origin = event.headers.origin || event.headers.Origin;
@@ -202,7 +256,7 @@ exports.handler = async (event) => {
     let data;
     try {
       data = JSON.parse(event.body || '{}');
-    } catch (e) {
+    } catch {
       return {
         statusCode: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -236,7 +290,6 @@ exports.handler = async (event) => {
       timestamp: orderTimestamp
     };
 
-    // Validation
     if (!order.name || order.name.length < 2) {
       return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid name' }) };
     }
@@ -256,7 +309,6 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ success: false, error: 'Invalid delivery type' }) };
     }
 
-    // Rate limit (غير دائم)
     const rateLimitId = crypto.createHash('sha256').update(`${clientIP}:${order.phone}`).digest('hex').substring(0, 16);
     const rateLimitCheck = checkRateLimit(rateLimitId);
     if (!rateLimitCheck.allowed) {
@@ -267,10 +319,9 @@ exports.handler = async (event) => {
       };
     }
 
-    // Send to Telegram
     await sendToTelegram(order);
+    const sheetsResult = await sendToGoogleSheet(order);
 
-    // Record (غير دائم)
     recordRequest(rateLimitId);
     orderStore.set(order.id, { ...order, processed_at: Date.now() });
 
@@ -278,7 +329,13 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Processing-Time': String(processingTime) },
-      body: JSON.stringify({ success: true, order_id: order.id, message: 'Order submitted successfully', processing_time: processingTime })
+      body: JSON.stringify({
+        success: true,
+        order_id: order.id,
+        message: 'Order submitted successfully',
+        processing_time: processingTime,
+        sheets_result: sheetsResult // مهم للتشخيص
+      })
     };
 
   } catch (error) {
@@ -286,7 +343,12 @@ exports.handler = async (event) => {
     const processingTime = Date.now() - startTime;
     return {
       statusCode: 500,
-      headers: { 'Access-Control-Allow-Origin': isValidOrigin(event.headers.origin || event.headers.Origin) ? (event.headers.origin || event.headers.Origin) : CONFIG.ALLOWED_ORIGINS[0], 'Vary': 'Origin', 'Content-Type': 'application/json', 'X-Processing-Time': String(processingTime) },
+      headers: {
+        'Access-Control-Allow-Origin': isValidOrigin(event.headers.origin || event.headers.Origin) ? (event.headers.origin || event.headers.Origin) : CONFIG.ALLOWED_ORIGINS[0],
+        'Vary': 'Origin',
+        'Content-Type': 'application/json',
+        'X-Processing-Time': String(processingTime)
+      },
       body: JSON.stringify({ success: false, error: 'Internal server error', processing_time: processingTime })
     };
   }
