@@ -71,6 +71,15 @@ const i18n = {
     rateLimitText: "يمكنك تقديم طلبين كحد أقصى خلال 24 ساعة. يرجى المحاولة بعد:",
     currency: "دج",
     pieces: "قطعة",
+    // New labels for header/billing
+    productPillText: "المنتج: Dermevia Pureskin - منظف الوجه بالكبريت",
+    unitPriceLabel: "سعر القطعة",
+    discountBadgeText: "خصم 30%",
+    productPriceLabel: "سعر المنتج",
+    deliveryCostLabel: "تكلفة التوصيل",
+    invoiceTotalLabel: "إجمالي الفاتورة",
+    afterDiscountLabel: "بعد الخصم",
+    // Footer
     footerTagline: "علم العناية بالبشرة الأوروبي المتقدم",
     footerContactTitle: "📞 مصلحة الزبائن",
     footerContactPhone: "+213 770 45 32 10 / +213 555 123 456",
@@ -140,6 +149,15 @@ const i18n = {
     rateLimitText: "Maximum 2 commandes par 24h. Réessayez dans:",
     currency: "DA",
     pieces: "unités",
+    // New labels for header/billing
+    productPillText: "Produit : Dermevia Pureskin - nettoyant au soufre",
+    unitPriceLabel: "Prix unitaire",
+    discountBadgeText: "Remise 30%",
+    productPriceLabel: "Prix du produit",
+    deliveryCostLabel: "Frais de livraison",
+    invoiceTotalLabel: "Total de la facture",
+    afterDiscountLabel: "Après remise",
+    // Footer
     footerTagline: "Science européenne avancée des soins cutanés",
     footerContactTitle: "📞 Service Client",
     footerContactPhone: "+213 770 45 32 10 / +213 555 123 456",
@@ -205,49 +223,11 @@ function generateSecurityFingerprint() {
     return securityFingerprint;
   }
 }
-function getWebGLFingerprint() {
-  try {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    if (!gl) return 'no-webgl';
-    const renderer = gl.getParameter(gl.RENDERER);
-    const vendor = gl.getParameter(gl.VENDOR);
-    return `${vendor}_${renderer}`.substring(0, 50);
-  } catch { return 'webgl-error'; }
-}
-function getFontFingerprint() {
-  try {
-    const testString = 'mmmmmmmmmlil';
-    const testFonts = ['Arial', 'Times New Roman', 'Courier New'];
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const baselines = testFonts.map(font => {
-      ctx.font = `12px ${font}`;
-      return ctx.measureText(testString).width;
-    });
-    return baselines.join(',');
-  } catch { return 'font-error'; }
-}
-function sanitizeInputAdvanced(input) {
-  if (typeof input !== 'string') return '';
-  return input.replace(/[<>\"'&\x00-\x1f\x7f-\x9f]/g, '').replace(/\s+/g, ' ').trim().substring(0, 500);
-}
-function validatePhoneAdvanced(phone) {
-  const cleanPhone = phone.replace(/\D/g, '');
-  if (cleanPhone.length !== 10) return false;
-  if (!/^(05|06|07)/.test(cleanPhone)) return false;
-  const suspiciousPatterns = [/^(.)\1{9}$/, /^0123456789$/, /^0987654321$/];
-  return !suspiciousPatterns.some(p => p.test(cleanPhone));
-}
-function validateNameAdvanced(name) {
-  if (!name || name.length < 2 || name.length > 100) return false;
-  const validNamePattern = /^[\u0600-\u06FF\u0750-\u077F\s\u064B-\u0652a-zA-ZÀ-ÿ\-'\.]+$/;
-  if (!validNamePattern.test(name)) return false;
-  const words = name.trim().split(/\s+/).filter(w => w.length >= 2);
-  if (words.length < 1) return false;
-  const suspicious = [/test/i,/admin/i,/null/i,/undefined/i,/script/i,/select/i,/drop/i,/delete/i,/insert/i,/update/i,/create/i,/alter/i,/^(.)\1+$/, /^\d+$/, /^[^a-zA-Z\u0600-\u06FF]+$/];
-  return !suspicious.some(p => p.test(name));
-}
+function getWebGLFingerprint() { try { const c=document.createElement('canvas'); const gl=c.getContext('webgl')||c.getContext('experimental-webgl'); if(!gl) return 'no-webgl'; const r=gl.getParameter(gl.RENDERER); const v=gl.getParameter(gl.VENDOR); return `${v}_${r}`.substring(0,50);} catch {return 'webgl-error';}}
+function getFontFingerprint() { try{const s='mmmmmmmmmlil'; const fonts=['Arial','Times New Roman','Courier New']; const c=document.createElement('canvas'); const ctx=c.getContext('2d'); const w=fonts.map(f=>{ctx.font=`12px ${f}`; return ctx.measureText(s).width;}); return w.join(',');}catch{return 'font-error';}}
+function sanitizeInputAdvanced(input){ if(typeof input!=='string')return ''; return input.replace(/[<>\"'&\x00-\x1f\x7f-\x9f]/g,'').replace(/\s+/g,' ').trim().substring(0,500); }
+function validatePhoneAdvanced(phone){ const p=phone.replace(/\D/g,''); if(p.length!==10) return false; if(!/^(05|06|07)/.test(p)) return false; const bad=[/^(.)\1{9}$/, /^0123456789$/, /^0987654321$/]; return !bad.some(x=>x.test(p)); }
+function validateNameAdvanced(name){ if(!name||name.length<2||name.length>100) return false; const re=/^[\u0600-\u06FF\u0750-\u077F\s\u064B-\u0652a-zA-ZÀ-ÿ\-'\.]+$/; if(!re.test(name)) return false; const words=name.trim().split(/\s+/).filter(w=>w.length>=2); if(words.length<1) return false; const sus=[/test/i,/admin/i,/null/i,/undefined/i,/script/i,/select/i,/drop/i,/delete/i,/insert/i,/update/i,/create/i,/alter/i,/^(.)\1+$/, /^\d+$/, /^[^a-zA-Z\u0600-\u06FF]+$/]; return !sus.some(p=>p.test(name)); }
 
 // =========== IP FETCH ===========
 async function fetchIPSecure() {
@@ -295,29 +275,14 @@ function canOrderByPhoneLocal(phone) {
     return { ok: true, left: 0, count: valid.length };
   } catch { return { ok: true, left: 0 }; }
 }
-function saveOrderAdvanced(phone) { 
-  try {
-    const sanitizedPhone = sanitizeInputAdvanced(phone);
-    const phoneKey = 'dermevia_phone_' + btoa(sanitizedPhone + CONFIG.SECURITY_SALT).substring(0, 16);
-    const now = Date.now();
-    let arr = []; const json = localStorage.getItem(phoneKey);
-    if (json) { try { arr = JSON.parse(json); if (!Array.isArray(arr)) arr = []; } catch { arr = []; } }
-    arr.push(now);
-    arr = arr.filter(ts => (now - ts) < CONFIG.PHONE_COOLDOWN_MS);
-    localStorage.setItem(phoneKey, JSON.stringify(arr));
-  } catch {}
-}
+function saveOrderAdvanced(phone){ try{ const sanitizedPhone=sanitizeInputAdvanced(phone); const key='dermevia_phone_'+btoa(sanitizedPhone+CONFIG.SECURITY_SALT).substring(0,16); const now=Date.now(); let arr=[]; const json=localStorage.getItem(key); if(json){ try{arr=JSON.parse(json); if(!Array.isArray(arr)) arr=[];}catch{arr=[];} } arr.push(now); arr=arr.filter(ts=>(now-ts)<CONFIG.PHONE_COOLDOWN_MS); localStorage.setItem(key, JSON.stringify(arr)); }catch{} }
 
 // =========== UTILS ===========
 function getLang() { return localStorage.getItem('dermevia_lang') || 'ar'; }
 function setLang(lang) { localStorage.setItem('dermevia_lang', lang); }
 function formatCurrency(value) { return value + ' ' + i18n[getLang()].currency; }
-function formatTimeLeft(ms) {
-  let s = Math.max(0, Math.floor(ms / 1000));
-  const h = String(Math.floor(s / 3600)).padStart(2,'0'); s%=3600;
-  const m = String(Math.floor(s / 60)).padStart(2,'0'); s%=60;
-  return `${h}:${m}:${String(s).padStart(2,'0')}`;
-}
+function formatTimeLeft(ms){ let s=Math.max(0,Math.floor(ms/1000)); const h=String(Math.floor(s/3600)).padStart(2,'0'); s%=3600; const m=String(Math.floor(s/60)).padStart(2,'0'); s%=60; return `${h}:${m}:${String(s).padStart(2,'0')}`; }
+function generateRequestId(){ return Date.now().toString(36)+Math.random().toString(36).substr(2,9); }
 
 // =========== ORDER SENDER ===========
 async function sendOrderSecure(data) {
@@ -360,107 +325,36 @@ async function sendOrderSecure(data) {
       let json = {};
       try { json = JSON.parse(text); } catch { json = {}; }
 
-      if (response.status === 200 && json.success) {
-        return { success: true, data: json };
-      }
+      if (response.status === 200 && json.success) return { success: true, data: json };
 
       if (response.status === 429) {
-        const ttlMs = Number(
-          json?.limit_info?.next_available_in_ms ??
-          json?.nextAvailableInMs ??
-          CONFIG.PHONE_COOLDOWN_MS
-        );
-        return {
-          success: false,
-          error: 'rate_limit',
-          message: json?.message,
-          ttlMs,
-          data: json
-        };
+        const ttlMs = Number(json?.limit_info?.next_available_in_ms ?? json?.nextAvailableInMs ?? CONFIG.PHONE_COOLDOWN_MS);
+        return { success:false, error:'rate_limit', ttlMs, message: json?.message, data: json };
       }
 
-      if (response.status === 400) {
-        return { success: false, error: 'validation', message: json?.error || 'Invalid data' };
-      }
+      if (response.status === 400) return { success:false, error:'validation', message: json?.error || 'Invalid data' };
 
-      if (attempt === maxRetries) {
-        return { success: false, error: 'server', message: json?.error || 'Server error' };
-      }
-      await new Promise(r => setTimeout(r, 1000 * attempt));
-
+      if (attempt === maxRetries) return { success:false, error:'server', message: json?.error || 'Server error' };
+      await new Promise(r=>setTimeout(r,1000*attempt));
     } catch (err) {
-      if (err.name === 'AbortError') {
-        if (attempt === maxRetries) return { success: false, error: 'timeout', message: 'انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى.' };
-      } else if ((err.message || '').includes('NetworkError') || (err.message || '').includes('Failed to fetch')) {
-        if (attempt === maxRetries) return { success: false, error: 'network', message: i18n[getLang()].networkError };
-      } else {
-        if (attempt === maxRetries) return { success: false, error: 'server', message: i18n[getLang()].serverError };
-      }
-      if (attempt < maxRetries) await new Promise(r => setTimeout(r, 1000 * attempt));
+      if (err.name === 'AbortError') { if (attempt === maxRetries) return { success:false, error:'timeout', message:'انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى.' }; }
+      else if ((err.message||'').includes('NetworkError') || (err.message||'').includes('Failed to fetch')) { if (attempt === maxRetries) return { success:false, error:'network', message:i18n[getLang()].networkError }; }
+      else { if (attempt === maxRetries) return { success:false, error:'server', message:i18n[getLang()].serverError }; }
+      if (attempt < maxRetries) await new Promise(r=>setTimeout(r,1000*attempt));
     }
   }
-  return { success: false, error: 'max_retries', message: 'فشل في الإرسال بعد عدة محاولات' };
-}
-function generateRequestId() {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+  return { success:false, error:'max_retries', message:'فشل في الإرسال بعد عدة محاولات' };
 }
 
 // =========== UI HELPERS ===========
-function showError(message) {
-  const errorBox = document.getElementById('errorBox');
-  const successBox = document.getElementById('successBox');
-  const alreadyBox = document.getElementById('alreadyBox');
-  const rateLimitBox = document.getElementById('rateLimitBox');
-  if (errorBox) { errorBox.textContent = message; errorBox.style.display = 'block'; }
-  if (successBox) successBox.style.display = 'none';
-  if (alreadyBox) alreadyBox.style.display = 'none';
-  if (rateLimitBox) rateLimitBox.style.display = 'none';
-  setTimeout(() => { errorBox?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
-}
-function showSuccess(message) {
-  const errorBox = document.getElementById('errorBox');
-  const successBox = document.getElementById('successBox');
-  const alreadyBox = document.getElementById('alreadyBox');
-  const rateLimitBox = document.getElementById('rateLimitBox');
-  if (successBox) { successBox.textContent = message; successBox.style.display = 'block'; }
-  if (errorBox) errorBox.style.display = 'none';
-  if (alreadyBox) alreadyBox.style.display = 'none';
-  if (rateLimitBox) rateLimitBox.style.display = 'none';
-  setTimeout(() => { successBox?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
-}
-function hideMessages() {
-  ['errorBox','successBox','alreadyBox','rateLimitBox'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
-}
-function showLoadingState(button) {
-  if (!button) return;
-  button.disabled = true;
-  button.classList.add('loading');
-  button.dataset.originalText = button.textContent;
-  const lang = getLang();
-  let dots = '';
-  const loadingText = lang === 'ar' ? 'معالجة آمنة' : 'Traitement sécurisé';
-  const interval = setInterval(() => {
-    dots = dots.length >= 3 ? '' : dots + '.';
-    button.textContent = loadingText + dots;
-  }, 500);
-  button.dataset.loadingInterval = interval;
-}
-function resetButtonState(button) {
-  if (!button) return;
-  const interval = button.dataset.loadingInterval;
-  if (interval) clearInterval(parseInt(interval));
-  button.disabled = false;
-  button.classList.remove('loading');
-  const lang = getLang();
-  button.textContent = button.dataset.originalText || (lang === 'ar' ? 'تأكيد الطلب الآمن مع الضمان' : 'Confirmer la commande sécurisée avec garantie');
-  button.style.background = 'linear-gradient(135deg, #009fe3, #0086c7)';
-}
+function showError(message){ const errorBox=document.getElementById('errorBox'); const successBox=document.getElementById('successBox'); const alreadyBox=document.getElementById('alreadyBox'); const rateLimitBox=document.getElementById('rateLimitBox'); if(errorBox){ errorBox.textContent=message; errorBox.style.display='block'; } if(successBox) successBox.style.display='none'; if(alreadyBox) alreadyBox.style.display='none'; if(rateLimitBox) rateLimitBox.style.display='none'; setTimeout(()=>{ errorBox?.scrollIntoView({behavior:'smooth',block:'center'});},100); }
+function showSuccess(message){ const errorBox=document.getElementById('errorBox'); const successBox=document.getElementById('successBox'); const alreadyBox=document.getElementById('alreadyBox'); const rateLimitBox=document.getElementById('rateLimitBox'); if(successBox){ successBox.textContent=message; successBox.style.display='block'; } if(errorBox) errorBox.style.display='none'; if(alreadyBox) alreadyBox.style.display='none'; if(rateLimitBox) rateLimitBox.style.display='none'; setTimeout(()=>{ successBox?.scrollIntoView({behavior:'smooth',block:'center'});},100); }
+function hideMessages(){ ['errorBox','successBox','alreadyBox','rateLimitBox'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; }); }
+function showLoadingState(button){ if(!button) return; button.disabled=true; button.classList.add('loading'); button.dataset.originalText=button.textContent; const lang=getLang(); let dots=''; const loadingText=lang==='ar'?'معالجة آمنة':'Traitement sécurisé'; const interval=setInterval(()=>{ dots=dots.length>=3?'':dots+'.'; button.textContent=loadingText+dots; },500); button.dataset.loadingInterval=interval; }
+function resetButtonState(button){ if(!button) return; const interval=button.dataset.loadingInterval; if(interval) clearInterval(parseInt(interval)); button.disabled=false; button.classList.remove('loading'); const lang=getLang(); button.textContent=button.dataset.originalText || (lang==='ar'?'تأكيد الطلب الآمن مع الضمان':'Confirmer la commande sécurisée avec garantie'); button.style.background='linear-gradient(135deg, #009fe3, #0086c7)'; }
 
 // =========== RATE LIMIT MESSAGE + COUNTDOWN ===========
-function showServerRateLimitCountdown(ttlMs, serverMessage) {
+function showServerRateLimitCountdown(ttlMs) {
   const lang = getLang();
   const baseText = i18n[lang].rateLimitText;
   const waitMs = Math.max(0, Number(ttlMs || CONFIG.PHONE_COOLDOWN_MS));
@@ -477,7 +371,6 @@ function showServerRateLimitCountdown(ttlMs, serverMessage) {
     msgEl = document.createElement('span'); msgEl.id = 'rate-msg';
     const space = document.createTextNode(' ');
     timerEl = document.createElement('strong'); timerEl.id = 'rate-timer'; timerEl.style.marginInlineStart = '8px';
-
     box.appendChild(msgEl); box.appendChild(space); box.appendChild(timerEl);
 
     const orderCard = document.getElementById('orderCard');
@@ -485,21 +378,17 @@ function showServerRateLimitCountdown(ttlMs, serverMessage) {
     if (form && form.parentNode) form.parentNode.insertBefore(box, form);
     else if (orderCard) orderCard.prepend(box);
     else document.body.prepend(box);
-  } else {
-    msgEl = msgEl || document.getElementById('rate-msg');
-    timerEl = timerEl || document.getElementById('rate-timer');
   }
 
-  if (msgEl) msgEl.textContent = (serverMessage || baseText);
+  if (!msgEl) msgEl = document.getElementById('rate-msg');
+  if (!timerEl) timerEl = document.getElementById('rate-timer');
+  if (msgEl) msgEl.textContent = baseText;
 
   if (window.__rateCountdownInterval) clearInterval(window.__rateCountdownInterval);
 
   const update = () => {
     const left = Math.max(0, end - Date.now());
-    const h = String(Math.floor(left / 3600000)).padStart(2,'0');
-    const m = String(Math.floor((left % 3600000) / 60000)).padStart(2,'0');
-    const s = String(Math.floor((left % 60000) / 1000)).padStart(2,'0');
-    if (timerEl) timerEl.textContent = `${h}:${m}:${s}`;
+    if (timerEl) timerEl.textContent = formatTimeLeft(left);
     if (left <= 0) {
       clearInterval(window.__rateCountdownInterval);
       if (box) box.style.display = 'none';
@@ -507,11 +396,14 @@ function showServerRateLimitCountdown(ttlMs, serverMessage) {
       box.style.display = 'block';
     }
   };
-
   update();
   window.__rateCountdownInterval = setInterval(update, 1000);
-
   box?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function updateRateLimitBannerLanguage(){
+  const box = document.getElementById('rate-limit');
+  const msg = document.getElementById('rate-msg');
+  if (box && msg) msg.textContent = i18n[getLang()].rateLimitText;
 }
 
 // =========== FORM VALIDATION ===========
@@ -535,17 +427,8 @@ function validateFormAdvanced() {
 }
 
 // =========== PRICING HELPERS ===========
-function calculateDiscountedPrice(originalPrice, quantity) {
-  return quantity >= 2 ? Math.floor(originalPrice * 0.7) : originalPrice;
-}
-function saveOrderLocally(order) {
-  try {
-    const orders = JSON.parse(localStorage.getItem('dermevia_orders') || '[]');
-    orders.unshift(order); if (orders.length > 10) orders.splice(10);
-    localStorage.setItem('dermevia_orders', JSON.stringify(orders));
-    localStorage.setItem('dermevia_last_order', JSON.stringify(order));
-  } catch {}
-}
+function calculateDiscountedPrice(originalPrice, quantity){ return quantity>=2 ? Math.floor(originalPrice*0.7) : originalPrice; }
+function saveOrderLocally(order){ try{ const orders=JSON.parse(localStorage.getItem('dermevia_orders')||'[]'); orders.unshift(order); if(orders.length>10) orders.splice(10); localStorage.setItem('dermevia_orders', JSON.stringify(orders)); localStorage.setItem('dermevia_last_order', JSON.stringify(order)); }catch{} }
 
 // =========== ORDER HANDLER ===========
 async function handleOrderSubmissionSecure(e) {
@@ -563,7 +446,7 @@ async function handleOrderSubmissionSecure(e) {
     const localCheck = canOrderByPhoneLocal(phone);
     if (!localCheck.ok) {
       resetButtonState(submitBtn);
-      showServerRateLimitCountdown(localCheck.left, null);
+      showServerRateLimitCountdown(localCheck.left);
       return;
     }
 
@@ -574,9 +457,7 @@ async function handleOrderSubmissionSecure(e) {
     const wilayaSelect = document.getElementById('wilaya');
     const wilayaOption = wilayaSelect.options[wilayaSelect.selectedIndex];
     const deliveryType = document.getElementById('delivery_type').value;
-    const deliveryPrice = (deliveryType === 'home') 
-      ? parseInt(wilayaOption.dataset.homePrice) || 0
-      : parseInt(wilayaOption.dataset.officePrice) || 0;
+    const deliveryPrice = (deliveryType === 'home') ? parseInt(wilayaOption.dataset.homePrice) || 0 : parseInt(wilayaOption.dataset.officePrice) || 0;
     const subtotalPrice = finalPrice * quantity;
     const totalPrice = subtotalPrice + deliveryPrice;
     const discountAmount = quantity >= 2 ? (originalPrice * quantity - subtotalPrice) : 0;
@@ -618,26 +499,17 @@ async function handleOrderSubmissionSecure(e) {
       saveOrderLocally(order);
       try {
         if (typeof fbq === 'function') {
-          fbq('track', 'Purchase', {
-            value: totalPrice / 100,
-            currency: 'USD',
-            content_name: order.product,
-            content_ids: [order.id],
-            content_type: 'product',
-            num_items: quantity
-          });
+          fbq('track','Purchase',{ value: totalPrice / 100, currency:'USD', content_name: order.product, content_ids:[order.id], content_type:'product', num_items: quantity });
         }
       } catch {}
-
       window.location.href = '/order.html';
       return;
     }
 
-    // فشل
     resetButtonState(submitBtn);
 
     if (result.error === 'rate_limit') {
-      showServerRateLimitCountdown(result.ttlMs, result.message);
+      showServerRateLimitCountdown(result.ttlMs);
       return;
     }
     if (result.error === 'validation') { showError('بيانات غير صحيحة. يرجى التحقق من المعلومات.'); return; }
@@ -651,191 +523,101 @@ async function handleOrderSubmissionSecure(e) {
   }
 }
 
-// =========== باقي الوظائف المرئية (سلايد شو، صور، أسعار) ===========
+// =========== باقي الوظائف المرئية ===========
 let lastOrderAttempt = null;
-function initSlideshow() {
-  const slides = document.querySelectorAll('.slide');
-  if (slides.length === 0) return;
-  startAutoSlide();
-  const container = document.querySelector('.slideshow-container');
-  if (container) {
-    container.addEventListener('mouseenter', stopAutoSlide);
-    container.addEventListener('mouseleave', startAutoSlide);
-  }
-  document.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') changeSlide(-1); else if (e.key === 'ArrowRight') changeSlide(1); });
-}
-function showSlide(index) {
-  const slides = document.querySelectorAll('.slide');
-  const dots = document.querySelectorAll('.dot');
-  if (slides.length === 0) return;
-  slides.forEach(s => s.classList.remove('active'));
-  dots.forEach(d => d.classList.remove('active'));
-  if (slides[index]) slides[index].classList.add('active');
-  if (dots[index]) dots[index].classList.add('active');
-  currentSlideIndex = index;
-}
-function changeSlide(direction) {
-  const slides = document.querySelectorAll('.slide');
-  if (slides.length === 0) return;
-  let idx = currentSlideIndex + direction;
-  if (idx >= slides.length) idx = 0;
-  else if (idx < 0) idx = slides.length - 1;
-  showSlide(idx);
-  if (slideInterval) { clearInterval(slideInterval); startAutoSlide(); }
-}
-function currentSlide(index) { showSlide(index - 1); if (slideInterval) { clearInterval(slideInterval); startAutoSlide(); } }
-function startAutoSlide() { if (slideInterval) clearInterval(slideInterval); slideInterval = setInterval(() => changeSlide(1), 4000); }
-function stopAutoSlide() { if (slideInterval) { clearInterval(slideInterval); slideInterval = null; } }
+function initSlideshow(){ const slides=document.querySelectorAll('.slide'); if(slides.length===0) return; startAutoSlide(); const container=document.querySelector('.slideshow-container'); if(container){ container.addEventListener('mouseenter', stopAutoSlide); container.addEventListener('mouseleave', startAutoSlide); } document.addEventListener('keydown',(e)=>{ if(e.key==='ArrowLeft') changeSlide(-1); else if(e.key==='ArrowRight') changeSlide(1); }); }
+function showSlide(index){ const slides=document.querySelectorAll('.slide'); const dots=document.querySelectorAll('.dot'); if(slides.length===0) return; slides.forEach(s=>s.classList.remove('active')); dots.forEach(d=>d.classList.remove('active')); if(slides[index]) slides[index].classList.add('active'); if(dots[index]) dots[index].classList.add('active'); currentSlideIndex=index; }
+function changeSlide(direction){ const slides=document.querySelectorAll('.slide'); if(slides.length===0) return; let idx=currentSlideIndex+direction; if(idx>=slides.length) idx=0; else if(idx<0) idx=slides.length-1; showSlide(idx); if(slideInterval){ clearInterval(slideInterval); startAutoSlide(); } }
+function currentSlide(index){ showSlide(index-1); if(slideInterval){ clearInterval(slideInterval); startAutoSlide(); } }
+function startAutoSlide(){ if(slideInterval) clearInterval(slideInterval); slideInterval=setInterval(()=>changeSlide(1),4000); }
+function stopAutoSlide(){ if(slideInterval){ clearInterval(slideInterval); slideInterval=null; } }
 
-function openModal(imageSrc) {
-  currentModalImages = [
-    'https://via.placeholder.com/800x600/009fe3/ffffff?text=Dermevia+1',
-    'https://via.placeholder.com/800x600/10b981/ffffff?text=Dermevia+2', 
-    'https://via.placeholder.com/800x600/6366f1/ffffff?text=Dermevia+3',
-    'https://via.placeholder.com/800x600/f59e0b/ffffff?text=Dermevia+4'
-  ];
-  currentModalIndex = currentModalImages.indexOf(imageSrc);
-  if (currentModalIndex === -1) currentModalIndex = 0;
-  const modal = document.getElementById('imageModal');
-  const modalImage = document.getElementById('modalImage');
-  if (modal && modalImage) { modalImage.src = imageSrc; modal.style.display = 'block'; document.body.style.overflow = 'hidden'; }
-}
-function closeModal() { const modal = document.getElementById('imageModal'); if (modal) { modal.style.display = 'none'; document.body.style.overflow = 'auto'; } }
-function modalPrev() { currentModalIndex = currentModalIndex > 0 ? currentModalIndex - 1 : currentModalImages.length - 1; const modalImage = document.getElementById('modalImage'); if (modalImage) modalImage.src = currentModalImages[currentModalIndex]; }
-function modalNext() { currentModalIndex = currentModalIndex < currentModalImages.length - 1 ? currentModalIndex + 1 : 0; const modalImage = document.getElementById('modalImage'); if (modalImage) modalImage.src = currentModalImages[currentModalIndex]; }
+function openModal(imageSrc){ currentModalImages=['https://via.placeholder.com/800x600/009fe3/ffffff?text=Dermevia+1','https://via.placeholder.com/800x600/10b981/ffffff?text=Dermevia+2','https://via.placeholder.com/800x600/6366f1/ffffff?text=Dermevia+3','https://via.placeholder.com/800x600/f59e0b/ffffff?text=Dermevia+4']; currentModalIndex=currentModalImages.indexOf(imageSrc); if(currentModalIndex===-1) currentModalIndex=0; const modal=document.getElementById('imageModal'); const modalImage=document.getElementById('modalImage'); if(modal&&modalImage){ modalImage.src=imageSrc; modal.style.display='block'; document.body.style.overflow='hidden'; } }
+function closeModal(){ const modal=document.getElementById('imageModal'); if(modal){ modal.style.display='none'; document.body.style.overflow='auto'; } }
+function modalPrev(){ currentModalIndex=currentModalIndex>0?currentModalIndex-1:currentModalImages.length-1; const img=document.getElementById('modalImage'); if(img) img.src=currentModalImages[currentModalIndex]; }
+function modalNext(){ currentModalIndex=currentModalIndex<currentModalImages.length-1?currentModalIndex+1:0; const img=document.getElementById('modalImage'); if(img) img.src=currentModalImages[currentModalIndex]; }
 
-function handleImageError(img) {
-  const fallbackDiv = document.createElement('div');
-  fallbackDiv.className = 'image-fallback';
-  fallbackDiv.style.cssText = `width:${img.offsetWidth||200}px;height:${img.offsetHeight||150}px;background:linear-gradient(135deg,#f8f9fa 0%,#e9ecef 100%);border:2px dashed #dee2e6;display:flex;align-items:center;justify-content:center;color:#6c757d;font-size:14px;font-weight:600;border-radius:${window.getComputedStyle(img).borderRadius||'8px'};`;
-  fallbackDiv.textContent = '📷 ' + (img.alt || 'صورة المنتج');
-  if (img.parentNode) img.parentNode.replaceChild(fallbackDiv, img);
-}
-function initImageFallbacks() {
-  const images = document.querySelectorAll('img');
-  images.forEach(img => {
-    img.addEventListener('error', () => handleImageError(img));
-    if (!img.complete && img.src) img.addEventListener('load', () => {});
-  });
-}
-function lazyLoadImages() {
-  const images = document.querySelectorAll('img[data-src]');
-  if ('IntersectionObserver' in window && images.length > 0) {
-    const obs = new IntersectionObserver((entries, observer) => {
-      entries.forEach(entry => { if (entry.isIntersecting) { const img = entry.target; img.src = img.dataset.src; img.removeAttribute('data-src'); observer.unobserve(img); } });
-    });
-    images.forEach(img => obs.observe(img));
-  }
-}
+function handleImageError(img){ const d=document.createElement('div'); d.className='image-fallback'; d.style.cssText=`width:${img.offsetWidth||200}px;height:${img.offsetHeight||150}px;background:linear-gradient(135deg,#f8f9fa 0%,#e9ecef 100%);border:2px dashed #dee2e6;display:flex;align-items:center;justify-content:center;color:#6c757d;font-size:14px;font-weight:600;border-radius:${window.getComputedStyle(img).borderRadius||'8px'};`; d.textContent='📷 '+(img.alt||'صورة المنتج'); if(img.parentNode) img.parentNode.replaceChild(d,img); }
+function initImageFallbacks(){ const images=document.querySelectorAll('img'); images.forEach(img=>{ img.addEventListener('error',()=>handleImageError(img)); if(!img.complete && img.src) img.addEventListener('load',()=>{}); }); }
+function lazyLoadImages(){ const images=document.querySelectorAll('img[data-src]'); if('IntersectionObserver' in window && images.length>0){ const obs=new IntersectionObserver((entries,observer)=>{ entries.forEach(entry=>{ if(entry.isIntersecting){ const img=entry.target; img.src=img.dataset.src; img.removeAttribute('data-src'); observer.unobserve(img); } }); }); images.forEach(img=>obs.observe(img)); } }
 
-function updateQuantity(newQuantity) {
-  const minQty = 1, maxQty = 10;
-  newQuantity = Math.max(minQty, Math.min(maxQty, newQuantity));
-  const quantityInput = document.getElementById('quantity');
-  const quantityDisplay = document.getElementById('headerQuantityDisplay');
-  const decreaseBtn = document.getElementById('headerDecreaseBtn');
-  const increaseBtn = document.getElementById('headerIncreaseBtn');
-  if (quantityInput) quantityInput.value = newQuantity;
-  if (quantityDisplay) quantityDisplay.textContent = newQuantity;
-  if (decreaseBtn) decreaseBtn.disabled = (newQuantity <= minQty);
-  if (increaseBtn) increaseBtn.disabled = (newQuantity >= maxQty);
-  updateHeaderPrice();
-  updatePriceDisplay();
-  updateFloatingCTA();
-}
+function updateQuantity(newQuantity){ const minQty=1,maxQty=10; newQuantity=Math.max(minQty,Math.min(maxQty,newQuantity)); const quantityInput=document.getElementById('quantity'); const quantityDisplay=document.getElementById('headerQuantityDisplay'); const decreaseBtn=document.getElementById('headerDecreaseBtn'); const increaseBtn=document.getElementById('headerIncreaseBtn'); if(quantityInput) quantityInput.value=newQuantity; if(quantityDisplay) quantityDisplay.textContent=newQuantity; if(decreaseBtn) decreaseBtn.disabled=(newQuantity<=minQty); if(increaseBtn) increaseBtn.disabled=(newQuantity>=maxQty); updateHeaderPrice(); updatePriceDisplay(); updateFloatingCTA(); }
+
 function updateHeaderPrice() {
+  const t = i18n[getLang()];
   const originalPrice = parseInt(document.getElementById('productPrice').value) || 0;
   const quantity = parseInt(document.getElementById('quantity').value) || 1;
   const priceOnlyPill = document.getElementById('priceOnlyPill');
   if (!priceOnlyPill) return;
+
   if (quantity >= 2) {
     const discountedPrice = calculateDiscountedPrice(originalPrice, quantity);
     const totalAfterDiscount = discountedPrice * quantity;
-    priceOnlyPill.innerHTML = `سعر القطعة: <strike>${formatCurrency(originalPrice)}</strike> ${formatCurrency(discountedPrice)} × ${quantity} = ${formatCurrency(totalAfterDiscount)} <span class="discount-badge">خصم 30%</span>`;
+    priceOnlyPill.innerHTML =
+      `${t.unitPriceLabel}: <strike>${formatCurrency(originalPrice)}</strike> ${formatCurrency(discountedPrice)} × ${quantity} = ${formatCurrency(totalAfterDiscount)} ` +
+      `<span class="discount-badge">${t.discountBadgeText}</span>`;
   } else if (quantity > 1) {
     const subtotal = originalPrice * quantity;
-    priceOnlyPill.textContent = `سعر القطعة: ${formatCurrency(originalPrice)} × ${quantity} = ${formatCurrency(subtotal)}`;
+    priceOnlyPill.textContent = `${t.unitPriceLabel}: ${formatCurrency(originalPrice)} × ${quantity} = ${formatCurrency(subtotal)}`;
   } else {
-    priceOnlyPill.textContent = `سعر القطعة: ${formatCurrency(originalPrice)}`;
+    priceOnlyPill.textContent = `${t.unitPriceLabel}: ${formatCurrency(originalPrice)}`;
   }
 }
+
 function updatePriceDisplay() {
+  const t = i18n[getLang()];
   const originalPrice = parseInt(document.getElementById('productPrice').value) || 0;
   const quantity = parseInt(document.getElementById('quantity').value) || 1;
   const wilayaSelect = document.getElementById('wilaya');
   const deliveryType = document.getElementById('delivery_type').value;
   const priceDisplay = document.getElementById('priceDisplay');
   if (!priceDisplay || !wilayaSelect) return;
+
   let deliveryPrice = null;
   if (wilayaSelect.selectedIndex > 0 && deliveryType) {
     const option = wilayaSelect.options[wilayaSelect.selectedIndex];
-    deliveryPrice = (deliveryType === 'home') ? parseInt(option.dataset.homePrice) || 0 : parseInt(option.dataset.officePrice) || 0;
+    deliveryPrice = (deliveryType === 'home') ? (parseInt(option.dataset.homePrice) || 0) : (parseInt(option.dataset.officePrice) || 0);
   }
+
   if (deliveryPrice !== null) {
     const finalPrice = calculateDiscountedPrice(originalPrice, quantity);
     const subtotalPrice = finalPrice * quantity;
     const totalPrice = subtotalPrice + deliveryPrice;
+
     let html = '';
     if (quantity >= 2) {
       const originalSubtotal = originalPrice * quantity;
-      html = `سعر المنتج: ${formatCurrency(originalPrice)} × ${quantity} = <strike>${formatCurrency(originalSubtotal)}</strike> | بعد الخصم: ${formatCurrency(subtotalPrice)} (خصم 30%) | تكلفة التوصيل: ${formatCurrency(deliveryPrice)} | <span style="color:#009fe3; font-size: 1.2em;">إجمالي الفاتورة: ${formatCurrency(totalPrice)}</span>`;
+      html = `${t.productPriceLabel}: ${formatCurrency(originalPrice)} × ${quantity} = <strike>${formatCurrency(originalSubtotal)}</strike> | ${t.afterDiscountLabel}: ${formatCurrency(subtotalPrice)} (${t.discountBadgeText}) | ${t.deliveryCostLabel}: ${formatCurrency(deliveryPrice)} | <span style="color:#009fe3; font-size: 1.2em;">${t.invoiceTotalLabel}: ${formatCurrency(totalPrice)}</span>`;
     } else {
-      html = `سعر المنتج: ${formatCurrency(originalPrice)} × ${quantity} = ${formatCurrency(subtotalPrice)} | تكلفة التوصيل: ${formatCurrency(deliveryPrice)} | <span style="color:#009fe3; font-size: 1.2em;">إجمالي الفاتورة: ${formatCurrency(totalPrice)}</span>`;
+      html = `${t.productPriceLabel}: ${formatCurrency(originalPrice)} × ${quantity} = ${formatCurrency(subtotalPrice)} | ${t.deliveryCostLabel}: ${formatCurrency(deliveryPrice)} | <span style="color:#009fe3; font-size: 1.2em;">${t.invoiceTotalLabel}: ${formatCurrency(totalPrice)}</span>`;
     }
     priceDisplay.innerHTML = html;
     priceDisplay.style.display = 'block';
-  } else { priceDisplay.style.display = 'none'; }
-}
-function updateFinalPriceAmount() {
-  const el = document.getElementById('finalPriceAmount');
-  const price = parseInt(document.getElementById('productPrice')?.value || '0') || 0;
-  if (el) el.textContent = formatCurrency(price);
-}
-function updateFloatingCTA() {
-  const lang = getLang();
-  const el = document.getElementById('floatingCTAText');
-  if (!el) return;
-  el.textContent = lang === 'ar' ? "اطلبي Dermevia Pureskin بأمان" : "Commandez Dermevia Pureskin en sécurité";
-}
-function toggleFloatingCTA() {
-  const floatingCTA = document.getElementById('floatingCTA');
-  const orderCard = document.getElementById('orderCard');
-  if (!floatingCTA || !orderCard) return;
-  const rect = orderCard.getBoundingClientRect();
-  const visible = rect.top < window.innerHeight && rect.bottom > 0;
-  if (visible || orderCard.style.display === 'block') floatingCTA.classList.add('hidden');
-  else floatingCTA.classList.remove('hidden');
+  } else {
+    priceDisplay.style.display = 'none';
+  }
 }
 
-function showOrderForm() {
-  const orderCard = document.getElementById('orderCard');
-  if (orderCard) { orderCard.style.display = 'block'; orderCard.scrollIntoView({ behavior: 'smooth' }); }
-  window.formStartTime = Date.now();
-  setTimeout(() => { toggleFloatingCTA(); }, 100);
-  try { if (typeof fbq === 'function') { fbq('track', 'InitiateCheckout', { value: parseInt(document.getElementById('productPrice').value) / 100, currency: 'USD', content_name: document.getElementById('productId').value }); } } catch {}
-}
+function updateFinalPriceAmount(){ const el=document.getElementById('finalPriceAmount'); const price=parseInt(document.getElementById('productPrice')?.value||'0')||0; if(el) el.textContent=formatCurrency(price); }
+function updateFloatingCTA(){ const lang=getLang(); const el=document.getElementById('floatingCTAText'); if(!el) return; el.textContent=lang==='ar'?"اطلبي Dermevia Pureskin بأمان":"Commandez Dermevia Pureskin en sécurité"; }
+function toggleFloatingCTA(){ const floatingCTA=document.getElementById('floatingCTA'); const orderCard=document.getElementById('orderCard'); if(!floatingCTA||!orderCard) return; const rect=orderCard.getBoundingClientRect(); const visible=rect.top<window.innerHeight && rect.bottom>0; if(visible || orderCard.style.display==='block') floatingCTA.classList.add('hidden'); else floatingCTA.classList.remove('hidden'); }
+function showOrderForm(){ const orderCard=document.getElementById('orderCard'); if(orderCard){ orderCard.style.display='block'; orderCard.scrollIntoView({behavior:'smooth'}); } window.formStartTime=Date.now(); setTimeout(()=>{ toggleFloatingCTA(); },100); try{ if(typeof fbq==='function'){ fbq('track','InitiateCheckout',{ value: parseInt(document.getElementById('productPrice').value)/100, currency:'USD', content_name: document.getElementById('productId').value }); } }catch{} }
 
 // =========== LANGUAGE ===========
-function translateByDataAttrs(lang) {
-  // عناصر نصية تحمل data-ar / data-fr
-  document.querySelectorAll('[data-ar],[data-fr]').forEach(el => {
-    const val = (lang === 'ar') ? el.getAttribute('data-ar') : el.getAttribute('data-fr');
-    if (val != null) el.textContent = val;
-  });
-}
-function switchLanguage(lang) {
+function translateByDataAttrs(lang){ document.querySelectorAll('[data-ar],[data-fr]').forEach(el=>{ const val=(lang==='ar')?el.getAttribute('data-ar'):el.getAttribute('data-fr'); if(val!=null) el.textContent=val; }); }
+function switchLanguage(lang){
   setLang(lang);
-  const html = document.documentElement;
-  const body = document.getElementById('body');
-  html.lang = lang; html.dir = (lang === 'ar') ? 'rtl' : 'ltr';
-  if (body) body.className = (lang === 'ar') ? 'rtl' : 'ltr';
+  const html=document.documentElement;
+  const body=document.getElementById('body');
+  html.lang=lang; html.dir=(lang==='ar')?'rtl':'ltr';
+  if(body) body.className=(lang==='ar')?'rtl':'ltr';
 
-  const arBtn = document.getElementById('ar-btn');
-  const frBtn = document.getElementById('fr-btn');
-  if (arBtn) arBtn.classList.toggle('active', lang === 'ar');
-  if (frBtn) frBtn.classList.toggle('active', lang === 'fr');
+  const arBtn=document.getElementById('ar-btn');
+  const frBtn=document.getElementById('fr-btn');
+  if(arBtn) arBtn.classList.toggle('active', lang==='ar');
+  if(frBtn) frBtn.classList.toggle('active', lang==='fr');
 
-  const text = i18n[lang];
+  const text=i18n[lang];
   const elementsToUpdate = {
     'productBadge': text.productBadge,'heroTitle': text.heroTitle,'heroSubtitle': text.heroSubtitle,'heroDescription': text.heroDescription,
     'acneText': text.acneText,'acneSubtext': text.acneSubtext,'ctaButton': text.ctaButton,'problemTitle': text.problemTitle,
@@ -844,16 +626,21 @@ function switchLanguage(lang) {
     'orderTitle': text.orderTitle,'quantityHeaderLabel': text.quantityHeaderLabel,'nameLabel': text.nameLabel,'phoneLabel': text.phoneLabel,
     'wilayaLabel': text.wilayaLabel,'communeLabel': text.communeLabel,'deliveryTypeLabel': text.deliveryTypeLabel,'galleryTitle': text.galleryTitle
   };
-  Object.entries(elementsToUpdate).forEach(([id, val]) => { const el = document.getElementById(id); if (el && val) { if (el.tagName === 'LABEL') el.innerHTML = val; else el.textContent = val; } });
+  Object.entries(elementsToUpdate).forEach(([id,val])=>{ const el=document.getElementById(id); if(el && val){ if(el.tagName==='LABEL') el.innerHTML=val; else el.textContent=val; } });
 
-  const selectElements = { 'selectWilaya': text.selectWilaya, 'selectCommune': text.selectCommune, 'selectDelivery': text.selectDelivery, 'homeText': text.homeText, 'officeText': text.officeText, 'submitBtn': text.confirm };
-  Object.entries(selectElements).forEach(([id, val]) => { const el = document.getElementById(id); if (el && val) el.textContent = val; });
+  const selectElements={'selectWilaya':text.selectWilaya,'selectCommune':text.selectCommune,'selectDelivery':text.selectDelivery,'homeText':text.homeText,'officeText':text.officeText,'submitBtn':text.confirm};
+  Object.entries(selectElements).forEach(([id,val])=>{ const el=document.getElementById(id); if(el && val) el.textContent=val; });
 
-  const nameInput = document.getElementById('name');
-  const phoneInput = document.getElementById('phone');
-  if (nameInput) nameInput.placeholder = lang === 'ar' ? 'الاسم الأول (واللقب اختياري)' : 'Prénom (nom optionnel)';
-  if (phoneInput) phoneInput.placeholder = '0555123456';
+  const nameInput=document.getElementById('name');
+  const phoneInput=document.getElementById('phone');
+  if(nameInput) nameInput.placeholder = lang==='ar' ? 'الاسم الأول (واللقب اختياري)' : 'Prénom (nom optionnel)';
+  if(phoneInput) phoneInput.placeholder='0555123456';
 
+  // Update product pill
+  const productPill = document.getElementById('productPill');
+  if (productPill) productPill.textContent = text.productPillText;
+
+  // Footer and misc
   const footerElements = {
     'footerTagline': text.footerTagline,'footerContactTitle': text.footerContactTitle,'footerContactPhone': text.footerContactPhone,'footerContactHours': text.footerContactHours,'footerContactEmail': text.footerContactEmail,
     'footerAddressTitle': text.footerAddressTitle,'footerAddress1': text.footerAddress1,'footerAddress2': text.footerAddress2,'footerPoliciesTitle': text.footerPoliciesTitle,
@@ -861,100 +648,70 @@ function switchLanguage(lang) {
     'footerShippingLabel': text.footerShippingLabel,'footerShippingText': text.footerShippingText,'footerPaymentLabel': text.footerPaymentLabel,'footerPaymentText': text.footerPaymentText,
     'footerAboutTitle': text.footerAboutTitle,'footerAboutText': text.footerAboutText,'footerAchievements': text.footerAchievements,'footerCopyright': text.footerCopyright,'footerDesign': text.footerDesign
   };
-  Object.entries(footerElements).forEach(([id, val]) => { const el = document.getElementById(id); if (el && val) el.textContent = val; });
+  Object.entries(footerElements).forEach(([id,val])=>{ const el=document.getElementById(id); if(el && val) el.textContent=val; });
 
-  // تحديت شامل لكل العناصر التي تحمل data-ar/data-fr
   translateByDataAttrs(lang);
-
-  // تبديل شهادات العملاء
-  const arTestimonials = document.querySelectorAll('.ar-testimonial');
-  const frTestimonials = document.querySelectorAll('.fr-testimonial');
-  if (lang === 'ar') { arTestimonials.forEach(el => el.style.display = 'block'); frTestimonials.forEach(el => el.style.display = 'none'); }
-  else { arTestimonials.forEach(el => el.style.display = 'none'); frTestimonials.forEach(el => el.style.display = 'block'); }
-
   updateSlideshowForLanguage(lang);
   updateHeaderPrice();
   updatePriceDisplay();
   updateFinalPriceAmount();
+  updateRateLimitBannerLanguage();
   updateFloatingCTA();
 }
-function updateSlideshowForLanguage(lang) {
-  const captions = document.querySelectorAll('.slide-caption');
-  const ar = ['منظف الوجه بالكبريت الطبيعي','مكونات طبيعية 100%','نتائج مضمونة خلال أسبوعين','سهل الاستخدام - مرتين يومياً'];
-  const fr = ['Nettoyant facial au soufre naturel','Ingrédients 100% naturels','Résultats garantis en deux semaines','Facile à utiliser - deux fois par jour'];
-  captions.forEach((c, i) => { c.textContent = (lang === 'ar' ? ar[i] : fr[i]) || ''; });
-}
+function updateSlideshowForLanguage(lang){ const captions=document.querySelectorAll('.slide-caption'); const ar=['منظف الوجه بالكبريت الطبيعي','مكونات طبيعية 100%','نتائج مضمونة خلال أسبوعين','سهل الاستخدام - مرتين يومياً']; const fr=['Nettoyant facial au soufre naturel','Ingrédients 100% naturels','Résultats garantis en deux semaines','Facile à utiliser - deux fois par jour']; captions.forEach((c,i)=>{ c.textContent=(lang==='ar'?ar[i]:fr[i])||''; }); }
 
 // =========== TRACKING ===========
-function trackViewContent() {
-  try { if (typeof fbq === 'function') { const productId = document.getElementById('productId'); const productPrice = document.getElementById('productPrice'); if (productId && productPrice) fbq('track','ViewContent',{ content_name: productId.value, content_type:'product', value: parseInt(productPrice.value)/100, currency:'USD' }); } } catch {}
-}
+function trackViewContent(){ try{ if(typeof fbq==='function'){ const productId=document.getElementById('productId'); const productPrice=document.getElementById('productPrice'); if(productId&&productPrice) fbq('track','ViewContent',{ content_name: productId.value, content_type:'product', value: parseInt(productPrice.value)/100, currency:'USD' }); } }catch{} }
 
 // =========== MAIN INIT ===========
-document.addEventListener('DOMContentLoaded', async function() {
-  document.addEventListener('contextmenu', e => e.preventDefault());
-  document.addEventListener('keydown', e => { if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) e.preventDefault(); });
+document.addEventListener('DOMContentLoaded', async function(){
+  document.addEventListener('contextmenu', e=>e.preventDefault());
+  document.addEventListener('keydown', e=>{ if(e.key==='F12' || (e.ctrlKey&&e.shiftKey&&e.key==='I') || (e.ctrlKey&&e.key==='U')) e.preventDefault(); });
 
   generateSecurityFingerprint();
   await fetchIPSecure();
 
   initImageFallbacks();
-  if ('IntersectionObserver' in window) lazyLoadImages();
+  if('IntersectionObserver' in window) lazyLoadImages();
   initSlideshow();
 
-  const ctaButton = document.getElementById('ctaButton');
-  if (ctaButton) ctaButton.addEventListener('click', (e) => { e.preventDefault(); showOrderForm(); });
-  const floatingCTABtn = document.getElementById('floatingCTABtn');
-  if (floatingCTABtn) floatingCTABtn.addEventListener('click', (e) => { e.preventDefault(); showOrderForm(); });
+  const ctaButton=document.getElementById('ctaButton'); if(ctaButton) ctaButton.addEventListener('click',(e)=>{ e.preventDefault(); showOrderForm(); });
+  const floatingCTABtn=document.getElementById('floatingCTABtn'); if(floatingCTABtn) floatingCTABtn.addEventListener('click',(e)=>{ e.preventDefault(); showOrderForm(); });
 
-  const arBtn = document.getElementById('ar-btn');
-  const frBtn = document.getElementById('fr-btn');
-  if (arBtn) arBtn.addEventListener('click', () => switchLanguage('ar'));
-  if (frBtn) frBtn.addEventListener('click', () => switchLanguage('fr'));
+  const arBtn=document.getElementById('ar-btn'); const frBtn=document.getElementById('fr-btn');
+  if(arBtn) arBtn.addEventListener('click', ()=>switchLanguage('ar'));
+  if(frBtn) frBtn.addEventListener('click', ()=>switchLanguage('fr'));
 
-  const decreaseBtn = document.getElementById('headerDecreaseBtn');
-  const increaseBtn = document.getElementById('headerIncreaseBtn');
-  if (decreaseBtn) decreaseBtn.addEventListener('click', () => { const q = parseInt(document.getElementById('quantity').value) || 1; updateQuantity(q - 1); });
-  if (increaseBtn) increaseBtn.addEventListener('click', () => { const q = parseInt(document.getElementById('quantity').value) || 1; updateQuantity(q + 1); });
+  const decreaseBtn=document.getElementById('headerDecreaseBtn');
+  const increaseBtn=document.getElementById('headerIncreaseBtn');
+  if(decreaseBtn) decreaseBtn.addEventListener('click', ()=>{ const q=parseInt(document.getElementById('quantity').value)||1; updateQuantity(q-1); });
+  if(increaseBtn) increaseBtn.addEventListener('click', ()=>{ const q=parseInt(document.getElementById('quantity').value)||1; updateQuantity(q+1); });
 
-  const wilayaSelect = document.getElementById('wilaya');
-  const deliveryTypeSelect = document.getElementById('delivery_type');
-  if (wilayaSelect) wilayaSelect.addEventListener('change', (e) => { populateCommunes(e.target.value); updatePriceDisplay(); });
-  if (deliveryTypeSelect) deliveryTypeSelect.addEventListener('change', updatePriceDisplay);
+  const wilayaSelect=document.getElementById('wilaya');
+  const deliveryTypeSelect=document.getElementById('delivery_type');
+  if(wilayaSelect) wilayaSelect.addEventListener('change',(e)=>{ populateCommunes(e.target.value); updatePriceDisplay(); });
+  if(deliveryTypeSelect) deliveryTypeSelect.addEventListener('change', updatePriceDisplay);
 
-  const debouncedScrollHandler = debounce(() => { toggleFloatingCTA(); }, 16);
-  window.addEventListener('scroll', debouncedScrollHandler, { passive: true });
+  const debouncedScrollHandler=debounce(()=>{ toggleFloatingCTA(); },16);
+  window.addEventListener('scroll', debouncedScrollHandler, { passive:true });
   window.addEventListener('resize', toggleFloatingCTA);
 
-  const phoneInput = document.getElementById('phone');
-  if (phoneInput) {
-    phoneInput.addEventListener('input', function() {
-      const lang = getLang();
-      const text = i18n[lang];
-      const phoneStatus = document.getElementById('phoneStatus');
-      this.value = this.value.replace(/[^0-9]/g, '');
-      const phone = this.value;
-      if (phone.length === 0) { phoneInput.classList.remove('valid','invalid'); if (phoneStatus) phoneStatus.style.display = 'none'; return; }
-      if (phone.length < 10) {
-        phoneInput.classList.remove('valid'); phoneInput.classList.add('invalid');
-        if (phoneStatus) { phoneStatus.textContent = text.phoneHintShort; phoneStatus.className = 'phone-status error'; phoneStatus.style.display = 'block'; }
-        return;
-      }
-      if (!validatePhoneAdvanced(phone)) {
-        phoneInput.classList.remove('valid'); phoneInput.classList.add('invalid');
-        if (phoneStatus) { phoneStatus.textContent = text.phoneHintPrefix; phoneStatus.className = 'phone-status error'; phoneStatus.style.display = 'block'; }
-      } else {
-        phoneInput.classList.remove('invalid'); phoneInput.classList.add('valid');
-        if (phoneStatus) { phoneStatus.textContent = text.phoneHintOk; phoneStatus.className = 'phone-status success'; phoneStatus.style.display = 'block'; }
-      }
+  const phoneInput=document.getElementById('phone');
+  if(phoneInput){
+    phoneInput.addEventListener('input', function(){
+      const lang=getLang(); const text=i18n[lang]; const phoneStatus=document.getElementById('phoneStatus');
+      this.value=this.value.replace(/[^0-9]/g,''); const phone=this.value;
+      if(phone.length===0){ phoneInput.classList.remove('valid','invalid'); if(phoneStatus) phoneStatus.style.display='none'; return; }
+      if(phone.length<10){ phoneInput.classList.remove('valid'); phoneInput.classList.add('invalid'); if(phoneStatus){ phoneStatus.textContent=text.phoneHintShort; phoneStatus.className='phone-status error'; phoneStatus.style.display='block'; } return; }
+      if(!validatePhoneAdvanced(phone)){ phoneInput.classList.remove('valid'); phoneInput.classList.add('invalid'); if(phoneStatus){ phoneStatus.textContent=text.phoneHintPrefix; phoneStatus.className='phone-status error'; phoneStatus.style.display='block'; } }
+      else { phoneInput.classList.remove('invalid'); phoneInput.classList.add('valid'); if(phoneStatus){ phoneStatus.textContent=text.phoneHintOk; phoneStatus.className='phone-status success'; phoneStatus.style.display='block'; } }
     });
   }
 
-  const orderForm = document.getElementById('orderForm');
-  if (orderForm) orderForm.addEventListener('submit', handleOrderSubmissionSecure);
+  const orderForm=document.getElementById('orderForm');
+  if(orderForm) orderForm.addEventListener('submit', handleOrderSubmissionSecure);
 
   updateQuantity(1);
-  // الترجمة الأولية + تحديث العبارات ذات data-*
   translateByDataAttrs(getLang());
   switchLanguage(getLang());
   updateHeaderPrice();
@@ -964,48 +721,31 @@ document.addEventListener('DOMContentLoaded', async function() {
   toggleFloatingCTA();
   trackViewContent();
 
-  if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').then(reg => {
-        setInterval(() => { if (reg.active) reg.active.postMessage({ type: 'CLEANUP_CACHE' }); }, 24 * 60 * 60 * 1000);
-      }).catch(() => {});
+  if('serviceWorker' in navigator && window.location.protocol!=='file:'){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('./sw.js').then(reg=>{
+        setInterval(()=>{ if(reg.active) reg.active.postMessage({ type:'CLEANUP_CACHE' }); }, 24*60*60*1000);
+      }).catch(()=>{});
     });
   }
 
-  console.log('✅ Dermevia Secure App Loaded (with i18n data-attrs support)');
+  console.log('✅ Dermevia Secure App Loaded (i18n fixes for header and prices)');
 });
 
 // =========== HELPERS ===========
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => { clearTimeout(timeout); func(...args); };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-}
-function populateCommunes(wilayaCode) {
-  const communeSelect = document.getElementById('commune');
-  if (!communeSelect) return;
-  communeSelect.innerHTML = `<option value="" id="selectCommune">${i18n[getLang()].selectCommune}</option>`;
-  if (!wilayaCode || !communesData[wilayaCode]) return;
-  communesData[wilayaCode].forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c; opt.textContent = c;
-    communeSelect.appendChild(opt);
-  });
-}
+function debounce(func, wait){ let timeout; return function executedFunction(...args){ const later=()=>{ clearTimeout(timeout); func(...args); }; clearTimeout(timeout); timeout=setTimeout(later, wait); }; }
+function populateCommunes(wilayaCode){ const communeSelect=document.getElementById('commune'); if(!communeSelect) return; communeSelect.innerHTML=`<option value="" id="selectCommune">${i18n[getLang()].selectCommune}</option>`; if(!wilayaCode || !communesData[wilayaCode]) return; communesData[wilayaCode].forEach(c=>{ const opt=document.createElement('option'); opt.value=c; opt.textContent=c; communeSelect.appendChild(opt); }); }
 
 // =========== ERROR HANDLING ===========
-window.addEventListener('error', (e) => { if (CONFIG.DEBUG_MODE) console.error('Full error details:', e); });
-window.addEventListener('unhandledrejection', (e) => { e.preventDefault(); if (CONFIG.DEBUG_MODE) console.error('Promise rejection:', e); });
+window.addEventListener('error', (e)=>{ if(CONFIG.DEBUG_MODE) console.error('Full error details:', e); });
+window.addEventListener('unhandledrejection', (e)=>{ e.preventDefault(); if(CONFIG.DEBUG_MODE) console.error('Promise rejection:', e); });
 
-// =========== EXPORT GLOBALS FOR HTML ===========
-window.changeSlide = changeSlide;
-window.currentSlide = currentSlide;
-window.openModal = openModal;
-window.closeModal = closeModal;
-window.modalPrev = modalPrev;
-window.modalNext = modalNext;
+// =========== EXPORT GLOBALS ===========
+window.changeSlide=changeSlide;
+window.currentSlide=currentSlide;
+window.openModal=openModal;
+window.closeModal=closeModal;
+window.modalPrev=modalPrev;
+window.modalNext=modalNext;
 
 console.log('🔧 Dermevia App - Netlify Functions Enhanced Version');
