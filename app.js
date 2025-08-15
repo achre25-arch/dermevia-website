@@ -184,12 +184,13 @@ const i18n = {
   }
 };
 
+
 // =========== TESTIMONIALS DATA ===========
 const TESTIMONIALS = {
   ar: [
     {
       platform: "📘",
-      avatar: "https://placehold.co/80x80/009fe3/ffffff?text=A",
+      avatar: "https://i.pravatar.cc/96?u=amina.benali.algiers",
       name: "أمينة بن علي",
       location: "الجزائر العاصمة",
       rating: 5,
@@ -198,7 +199,7 @@ const TESTIMONIALS = {
     },
     {
       platform: "📷",
-      avatar: "https://placehold.co/80x80/10b981/ffffff?text=S",
+      avatar: "https://i.pravatar.cc/96?u=sarah.aloui.oran",
       name: "سارة عليوي",
       location: "وهران",
       rating: 5,
@@ -207,7 +208,7 @@ const TESTIMONIALS = {
     },
     {
       platform: "📘",
-      avatar: "https://placehold.co/80x80/6366f1/ffffff?text=N",
+      avatar: "https://i.pravatar.cc/96?u=nourelhoda.kamal.constantine",
       name: "نور الهدى كمال",
       location: "قسنطينة",
       rating: 5,
@@ -218,7 +219,7 @@ const TESTIMONIALS = {
   fr: [
     {
       platform: "📘",
-      avatar: "https://placehold.co/80x80/f59e0b/ffffff?text=L",
+      avatar: "https://i.pravatar.cc/96?u=leila.boudjemaa.alger",
       name: "Leila Boudjemaa",
       location: "Alger",
       rating: 5,
@@ -227,7 +228,7 @@ const TESTIMONIALS = {
     },
     {
       platform: "📷",
-      avatar: "https://placehold.co/80x80/009fe3/ffffff?text=F",
+      avatar: "https://i.pravatar.cc/96?u=fatima.rezki.oran",
       name: "Fatima Rezki",
       location: "Oran",
       rating: 5,
@@ -236,7 +237,7 @@ const TESTIMONIALS = {
     },
     {
       platform: "📘",
-      avatar: "https://placehold.co/80x80/10b981/ffffff?text=K",
+      avatar: "https://i.pravatar.cc/96?u=khadija.mansouri.constantine",
       name: "Khadija Mansouri",
       location: "Constantine",
       rating: 5,
