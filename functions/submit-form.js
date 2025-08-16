@@ -43,6 +43,73 @@ const I18N = {
 };
 const L = (lang) => (I18N[lang] || I18N.ar);
 
+import { supabaseAdmin, json, originFrom } from './_supabase.js';
+
+async function sendTelegramIfEnabled(sb, order) {
+  const { data: tg } = await sb.from('settings').select('value').eq('key','telegram').single();
+  const cfg = tg?.value || {};
+  if (!cfg.enabled || !cfg.bot_token || !cfg.chat_id) return;
+
+  const text =
+`🧴 Dermevia - طلب جديد
+الاسم: ${order.name}
+الهاتف: ${order.phone}
+الولاية/البلدية: ${order.wilaya} / ${order.commune}
+الكمية: ${order.quantity}
+المجموع: ${order.total_price} ${order.lang==='fr'?'DA':'دج'}
+الحالة: ${order.status}`;
+
+  try {
+    await fetch(`https://api.telegram.org/bot${cfg.bot_token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: cfg.chat_id, text })
+    });
+  } catch {}
+}
+
+export async function handler(event) {
+  const origin = originFrom(event);
+  if (event.httpMethod === 'OPTIONS') return json({}, 200, origin);
+  if (event.httpMethod !== 'POST') return json({ error: 'method not allowed' }, 405, origin);
+
+  try {
+    const body = JSON.parse(event.body || '{}');
+    const sb = supabaseAdmin();
+
+    // احفظ الطلب
+    const record = {
+      ext_id: body.id,
+      product_id: null,               // إن كان لديك id حقيقي من products اربطه
+      product_name: body.product,
+      product_price: body.product_price,
+      quantity: body.quantity,
+      subtotal_price: body.subtotal_price,
+      delivery_price: body.delivery_price,
+      total_price: body.total_price,
+      discount_amount: body.discount_amount,
+      discount_percentage: body.discount_percentage,
+      name: body.name,
+      phone: body.phone,
+      wilaya: body.wilaya,
+      commune: body.commune,
+      delivery_type: body.delivery_type,
+      lang: body.lang,
+      client_ip: body.client_ip,
+      status: 'new',
+      notes: null
+    };
+
+    const { data, error } = await sb.from('orders').insert(record).select('*').single();
+    if (error) throw error;
+
+    // Telegram
+    await sendTelegramIfEnabled(sb, data);
+
+    return json({ success: true, order: data }, 200, origin);
+  } catch (e) { return json({ success: false, error: e.message }, 500, origin); }
+}
+
 // Helpers
 function isValidOrigin(origin) {
   if (!origin) return false;

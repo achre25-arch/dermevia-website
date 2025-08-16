@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>لوحة التحكم - Dermevia</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial; background:#f6f8fb; margin:0; color:#111;}
+    header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:white;border-bottom:1px solid #e5e7eb;}
+    .tabs{display:flex;gap:8px;margin:12px 16px;}
+    .tab{padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;cursor:pointer}
+    .tab.active{background:#0ea5e9;color:white;border-color:#0ea5e9}
+    .view{display:none;padding:16px}
+    .view.active{display:block}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px; flex:1; min-width:280px}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid #eee;padding:8px 6px;text-align:start}
+    input,select,textarea{padding:8px;border:1px solid #cbd5e1;border-radius:8px;width:100%}
+    label{font-size:12px;color:#334155}
+    .actions{display:flex;gap:8px}
+    .btn{padding:8px 12px;border-radius:8px;border:1px solid #0ea5e9;background:#0ea5e9;color:#fff;cursor:pointer}
+    .btn.secondary{background:#fff;color:#0ea5e9}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px}
+  </style>
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+</head>
+<body>
+  <header>
+    <div>لوحة تحكّم Dermevia</div>
+    <div id="authBox">
+      <button id="loginBtn" class="btn secondary">تسجيل الدخول</button>
+      <button id="logoutBtn" class="btn" style="display:none">تسجيل الخروج</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-view="ordersView">الطلبيات</button>
+    <button class="tab" data-view="productsView">المنتجات</button>
+    <button class="tab" data-view="settingsView">الإعدادات</button>
+  </nav>
+
+  <!-- Orders -->
+  <section id="ordersView" class="view active">
+    <div class="card">
+      <div class="row">
+        <div><label>بحث</label><input id="ordersSearch" placeholder="اسم أو هاتف"></div>
+        <div>
+          <label>الحالة</label>
+          <select id="ordersStatus">
+            <option value="">الكل</option>
+            <option value="new">جديد</option>
+            <option value="confirmed">مؤكد</option>
+            <option value="shipped">مُرسل</option>
+            <option value="canceled">ملغى</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button id="refreshOrders" class="btn">تحديث</button>
+          <a id="exportCsv" class="btn secondary" href="#">تصدير CSV</a>
+        </div>
+      </div>
+      <table id="ordersTable"><thead>
+        <tr><th>التاريخ</th><th>الاسم</th><th>الهاتف</th><th>المنتج</th><th>الكمية</th><th>الإجمالي</th><th>الحالة</th><th>إجراءات</th></tr>
+      </thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- Products -->
+  <section id="productsView" class="view">
+    <div class="row">
+      <div class="card" style="flex:2">
+        <div class="actions" style="justify-content:space-between">
+          <div style="font-weight:600">قائمة المنتجات</div>
+          <button id="addProductBtn" class="btn">+ منتج جديد</button>
+        </div>
+        <table id="productsTable"><thead>
+          <tr><th>الاسم (AR)</th><th>الاسم (FR)</th><th>السعر</th><th>مُفعل</th><th>إجراءات</th></tr>
+        </thead><tbody></tbody></table>
+      </div>
+      <div class="card" style="flex:1">
+        <div style="font-weight:600;margin-bottom:8px">تفاصيل المنتج</div>
+        <div class="grid">
+          <div><label>SKU</label><input id="p_sku"></div>
+          <div><label>السعر (دج)</label><input id="p_price" type="number"></div>
+          <div><label>مُفعل</label><select id="p_active"><option value="true">نعم</option><option value="false">لا</option></select></div>
+          <div><label>الصورة</label><input id="p_image"></div>
+          <div style="grid-column:1/-1"><label>الاسم AR</label><input id="p_name_ar"></div>
+          <div style="grid-column:1/-1"><label>الاسم FR</label><input id="p_name_fr"></div>
+          <div style="grid-column:1/-1"><label>الوصف AR</label><textarea id="p_desc_ar" rows="3"></textarea></div>
+          <div style="grid-column:1/-1"><label>الوصف FR</label><textarea id="p_desc_fr" rows="3"></textarea></div>
+        </div>
+        <div class="actions" style="margin-top:10px">
+          <button id="saveProduct" class="btn">حفظ</button>
+          <button id="deleteProduct" class="btn secondary">حذف</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Settings -->
+  <section id="settingsView" class="view">
+    <div class="row">
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:8px">Pixels</div>
+        <div class="grid">
+          <div><label>Facebook Pixel ID</label><input id="s_fb"></div>
+          <div><label>TikTok Pixel ID</label><input id="s_tt"></div>
+          <div><label>Google Tag ID (G-XXXX)</label><input id="s_gtag"></div>
+          <div><label>مفعّل</label><select id="s_px_enabled"><option value="true">نعم</option><option value="false">لا</option></select></div>
+          <div style="grid-column:1/-1"><label>Custom HEAD HTML</label><textarea id="s_head" rows="4" placeholder="اختياري - كود يحقن في <head>"></textarea></div>
+          <div style="grid-column:1/-1"><label>Custom BODY-END HTML</label><textarea id="s_body" rows="4" placeholder="اختياري - كود يحقن قبل </body>"></textarea></div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:8px">Telegram</div>
+        <div class="grid">
+          <div><label>Enabled</label><select id="t_enabled"><option value="true">نعم</option><option value="false">لا</option></select></div>
+          <div><label>Bot Token</label><input id="t_token" placeholder="1234:ABC..."></div>
+          <div><label>Chat ID</label><input id="t_chat" placeholder="@channel أو رقم"></div>
+        </div>
+      </div>
+    </div>
+    <div class="actions" style="margin-top:10px">
+      <button id="saveSettings" class="btn">حفظ الإعدادات</button>
+    </div>
+  </section>
+
+  <script src="./admin.js"></script>
+</body>
+</html>

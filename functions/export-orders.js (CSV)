@@ -1,0 +1,28 @@
+import { supabaseAdmin, isAdmin, originFrom } from './_supabase.js';
+
+export async function handler(event) {
+  const origin = originFrom(event);
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: { 'Access-Control-Allow-Origin': origin } };
+  if (!isAdmin(event)) return { statusCode: 403, body: 'forbidden' };
+
+  try {
+    const sb = supabaseAdmin();
+    const { data, error } = await sb.from('orders').select('*').order('created_at', { ascending: false }).limit(5000);
+    if (error) throw error;
+
+    const cols = ["created_at","name","phone","wilaya","commune","delivery_type","product_name","quantity","total_price","status","notes"];
+    const header = cols.join(',');
+    const rows = data.map(r => cols.map(c => `"${(r[c] ?? '').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+    const csv = header + '\n' + rows;
+
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="orders.csv"',
+        'Access-Control-Allow-Origin': origin
+      },
+      body: csv
+    };
+  } catch (e) { return { statusCode: 500, body: e.message }; }
+}

@@ -1010,6 +1010,42 @@ document.addEventListener('DOMContentLoaded', async function() {
   document.addEventListener('contextmenu', e => e.preventDefault());
   document.addEventListener('keydown', e => { if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) e.preventDefault(); });
 
+(async function injectPixels() {
+  try {
+    const res = await fetch('/.netlify/functions/public-settings');
+    const { pixels } = await res.json();
+    if (!pixels || pixels.enabled === false) return;
+
+    // Facebook Pixel
+    if (pixels.facebook_pixel_id) {
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', pixels.facebook_pixel_id); fbq('track','PageView');
+    }
+
+    // TikTok
+    if (pixels.tiktok_pixel_id) {
+      !function (w, d, t) { w.TiktokAnalyticsObject=t;var tt=w[t]=w[t]||[];tt.methods=['page','track','identify','instances','debug','on','off','once','ready','setUserProperties','set','reset','getExternalDeviceId','getUserProperties'];tt.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<tt.methods.length;i++)tt.setAndDefer(tt,tt.methods[i]);tt.instance=function(t){var e=tt._i[t]||[];return function(){tt.push([t].concat(Array.prototype.slice.call(arguments,0)))}};tt.load=function(e){var n='https://analytics.tiktok.com/i18n/pixel/events.js';tt._i=tt._i||{};tt._i[e]=[];tt._i[e]._u=n;tt._t=tt._t||{};tt._t[e]=+new Date;var o=d.createElement('script');o.type='text/javascript';o.async=!0;o.src=n;var a=d.getElementsByTagName('script')[0];a.parentNode.insertBefore(o,a)};}(window, document, 'ttq');
+      ttq.load(pixels.tiktok_pixel_id); ttq.page();
+    }
+
+    // Google Tag
+    if (pixels.gtag_id) {
+      const s=document.createElement('script'); s.async=true; s.src=`https://www.googletagmanager.com/gtag/js?id=${pixels.gtag_id}`; document.head.appendChild(s);
+      window.dataLayer=window.dataLayer||[]; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', pixels.gtag_id);
+    }
+
+    if (pixels.custom_head_html) {
+      const wrap = document.createElement('div'); wrap.innerHTML = pixels.custom_head_html; [...wrap.childNodes].forEach(n=>document.head.appendChild(n));
+    }
+    if (pixels.custom_body_end_html) {
+      const wrap = document.createElement('div'); wrap.innerHTML = pixels.custom_body_end_html; [...wrap.childNodes].forEach(n=>document.body.appendChild(n));
+    }
+  } catch {}
+})();
+
   generateSecurityFingerprint();
   await fetchIPSecure();
 
